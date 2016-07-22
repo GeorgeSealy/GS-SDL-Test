@@ -17,7 +17,7 @@
 #include <OpenGL/OpenGL.h>
 #include <OpenGL/gl.h>
 
-#define PROGRAM_NAME "Tutorial1"
+#define PROGRAM_NAME "GL Skeleton"
 
 /* A simple function that prints a message, the error code returned by SDL,
  * and quits the application */
@@ -43,12 +43,30 @@ void checkSDLError(int line = -1)
 #endif
 }
 
+void runMainLoop(SDL_Window *mainWindow) {
+    
+    double r = 0.0;
+    
+    while (true) {
+        
+        r += 0.01;
+        
+        if (r > 1.0) {
+            r = 0.0;
+        }
+        
+        glClearColor ( r, 0.0, 0.0, 1.0 );
+        glClear ( GL_COLOR_BUFFER_BIT );
+        
+        SDL_GL_SwapWindow(mainWindow);
+    }
+}
 
 /* Our program's entry point */
 int main(int argc, char *argv[])
 {
-    SDL_Window *mainwindow; /* Our window handle */
-    SDL_GLContext maincontext; /* Our opengl context handle */
+    SDL_Window *mainWindow; /* Our window handle */
+    SDL_GLContext mainContext; /* Our opengl context handle */
     
     if (SDL_Init(SDL_INIT_VIDEO) < 0) /* Initialize SDL's Video subsystem */
         sdldie("Unable to initialize SDL"); /* Or die on error */
@@ -62,44 +80,42 @@ int main(int argc, char *argv[])
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     
     /* Create our window centered at 512x512 resolution */
-    mainwindow = SDL_CreateWindow(PROGRAM_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    mainWindow = SDL_CreateWindow(PROGRAM_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                   512, 512, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-    if (!mainwindow) /* Die if creation failed */
+    if (!mainWindow) /* Die if creation failed */
         sdldie("Unable to create window");
     
     checkSDLError(__LINE__);
     
     /* Create our opengl context and attach it to our window */
-    maincontext = SDL_GL_CreateContext(mainwindow);
+    mainContext = SDL_GL_CreateContext(mainWindow);
     checkSDLError(__LINE__);
     
-    
-    /* This makes our buffer swap syncronized with the monitor's vertical refresh */
     SDL_GL_SetSwapInterval(1);
     
+    runMainLoop(mainWindow);
+    
+    /* This makes our buffer swap syncronized with the monitor's vertical refresh */
+    
     /* Clear our buffer with a red background */
-    glClearColor ( 1.0, 0.0, 0.0, 1.0 );
-    glClear ( GL_COLOR_BUFFER_BIT );
-    /* Swap our back buffer to the front */
-    SDL_GL_SwapWindow(mainwindow);
     /* Wait 2 seconds */
-    SDL_Delay(2000);
-    
-    /* Same as above, but green */
-    glClearColor ( 0.0, 1.0, 0.0, 1.0 );
-    glClear ( GL_COLOR_BUFFER_BIT );
-    SDL_GL_SwapWindow(mainwindow);
-    SDL_Delay(2000);
-    
-    /* Same as above, but blue */
-    glClearColor ( 0.0, 0.0, 1.0, 1.0 );
-    glClear ( GL_COLOR_BUFFER_BIT );
-    SDL_GL_SwapWindow(mainwindow);
-    SDL_Delay(2000);
+//    SDL_Delay(2000);
+//    
+//    /* Same as above, but green */
+//    glClearColor ( 0.0, 1.0, 0.0, 1.0 );
+//    glClear ( GL_COLOR_BUFFER_BIT );
+//    SDL_GL_SwapWindow(mainwindow);
+//    SDL_Delay(2000);
+//    
+//    /* Same as above, but blue */
+//    glClearColor ( 0.0, 0.0, 1.0, 1.0 );
+//    glClear ( GL_COLOR_BUFFER_BIT );
+//    SDL_GL_SwapWindow(mainwindow);
+//    SDL_Delay(2000);
     
     /* Delete our opengl context, destroy our window, and shutdown SDL */
-    SDL_GL_DeleteContext(maincontext);
-    SDL_DestroyWindow(mainwindow);
+    SDL_GL_DeleteContext(mainContext);
+    SDL_DestroyWindow(mainWindow);
     SDL_Quit();
     
     return 0;

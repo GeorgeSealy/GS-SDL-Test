@@ -1,6 +1,5 @@
 # Things To Do
 
-- Basic window rendering
 - High res timing info (nanoseconds)
 - "Good" render loop
 - Render basic cube mesh
@@ -16,4 +15,6 @@
 - Try out libyojimbo for networking
 
 
-# Done 22/7/2016
+## Done 22/7/2016
+
+- Basic window rendering
