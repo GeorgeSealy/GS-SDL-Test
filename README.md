@@ -1,7 +1,5 @@
 # Things To Do
 
-- High res timing info (nanoseconds)
-- "Good" render loop
 - Render basic cube mesh
 - Update to Spherised-cube
 - Update to quad tree chunk rendering
@@ -18,3 +16,5 @@
 ## Done 22/7/2016
 
 - Basic window rendering
+- High res timing info (nanoseconds)
+- "Good" render loop
