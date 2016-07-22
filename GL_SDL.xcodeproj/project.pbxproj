@@ -10,7 +10,6 @@
 		5EDECA291D41D02E00DBCB9E /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5EDECA281D41D02E00DBCB9E /* main.cpp */; };
 		5EDECA351D41FD3600DBCB9E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EDECA341D41FD3600DBCB9E /* OpenGL.framework */; };
 		5EDECA391D41FFB400DBCB9E /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EDECA381D41FFB400DBCB9E /* SDL2.framework */; };
-		5EDECA3B1D42010900DBCB9E /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 5EDECA3A1D42010900DBCB9E /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -137,7 +136,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5EDECA3B1D42010900DBCB9E /* README.md in Sources */,
 				5EDECA291D41D02E00DBCB9E /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

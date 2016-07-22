@@ -69,7 +69,40 @@ void checkSDLError(int line = -1)
 
 Timer timer = Timer();
 
-void runMainLoop(SDL_Window *mainWindow) {
+void initWindowAndContext(SDL_Window **window, SDL_GLContext *context) {
+    
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) /* Initialize SDL's Video subsystem */
+        sdldie("Unable to initialize SDL"); /* Or die on error */
+    
+    SDL_GL_SetAttribute (SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+    SDL_GL_SetAttribute (SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    
+    /* Create our window centered at 512x512 resolution */
+    *window = SDL_CreateWindow(PROGRAM_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                  640, 480, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    if (!*window) /* Die if creation failed */
+        sdldie("Unable to create window");
+    
+    checkSDLError(__LINE__);
+    
+    /* Create our opengl context and attach it to our window */
+    *context = SDL_GL_CreateContext(*window);
+    checkSDLError(__LINE__);
+    
+    SDL_GL_SetSwapInterval(1);
+}
+
+void deleteWindowAndContext(SDL_Window *window, SDL_GLContext &context) {
+    SDL_GL_DeleteContext(context);
+    SDL_DestroyWindow(window);
+}
+
+void runMainLoop(SDL_Window *window) {
     
     bool quit = false;
     
@@ -119,7 +152,7 @@ void runMainLoop(SDL_Window *mainWindow) {
         glClearColor ( r, 0.0, 0.0, 1.0 );
         glClear ( GL_COLOR_BUFFER_BIT );
         
-        SDL_GL_SwapWindow(mainWindow);
+        SDL_GL_SwapWindow(window);
         
         // GAME STATE RENDER - END
     }
@@ -131,55 +164,11 @@ int main(int argc, char *argv[])
 {
     SDL_Window *mainWindow; /* Our window handle */
     SDL_GLContext mainContext; /* Our opengl context handle */
-    
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) /* Initialize SDL's Video subsystem */
-        sdldie("Unable to initialize SDL"); /* Or die on error */
-    
-    SDL_GL_SetAttribute (SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-    SDL_GL_SetAttribute (SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-    
-    /* Create our window centered at 512x512 resolution */
-    mainWindow = SDL_CreateWindow(PROGRAM_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                  640, 480, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-    if (!mainWindow) /* Die if creation failed */
-        sdldie("Unable to create window");
-    
-    checkSDLError(__LINE__);
-    
-    /* Create our opengl context and attach it to our window */
-    mainContext = SDL_GL_CreateContext(mainWindow);
-    checkSDLError(__LINE__);
-    
-    SDL_GL_SetSwapInterval(1);
-    
+
+    initWindowAndContext(&mainWindow, &mainContext);
     runMainLoop(mainWindow);
-    
-    /* This makes our buffer swap syncronized with the monitor's vertical refresh */
-    
-    /* Clear our buffer with a red background */
-    /* Wait 2 seconds */
-//    SDL_Delay(2000);
-//    
-//    /* Same as above, but green */
-//    glClearColor ( 0.0, 1.0, 0.0, 1.0 );
-//    glClear ( GL_COLOR_BUFFER_BIT );
-//    SDL_GL_SwapWindow(mainwindow);
-//    SDL_Delay(2000);
-//    
-//    /* Same as above, but blue */
-//    glClearColor ( 0.0, 0.0, 1.0, 1.0 );
-//    glClear ( GL_COLOR_BUFFER_BIT );
-//    SDL_GL_SwapWindow(mainwindow);
-//    SDL_Delay(2000);
-    
-    /* Delete our opengl context, destroy our window, and shutdown SDL */
-    SDL_GL_DeleteContext(mainContext);
-    SDL_DestroyWindow(mainWindow);
+    deleteWindowAndContext(mainWindow, mainContext);
+
     SDL_Quit();
     
     return 0;
