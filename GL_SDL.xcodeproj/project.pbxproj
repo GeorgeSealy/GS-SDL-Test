@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		5EDECA291D41D02E00DBCB9E /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5EDECA281D41D02E00DBCB9E /* main.cpp */; };
+		5EDECA351D41FD3600DBCB9E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EDECA341D41FD3600DBCB9E /* OpenGL.framework */; };
+		5EDECA391D41FFB400DBCB9E /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5EDECA381D41FFB400DBCB9E /* SDL2.framework */; };
+		5EDECA3B1D42010900DBCB9E /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 5EDECA3A1D42010900DBCB9E /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +28,9 @@
 /* Begin PBXFileReference section */
 		5EDECA251D41D02E00DBCB9E /* GL_SDL */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GL_SDL; sourceTree = BUILT_PRODUCTS_DIR; };
 		5EDECA281D41D02E00DBCB9E /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		5EDECA341D41FD3600DBCB9E /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		5EDECA381D41FFB400DBCB9E /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../Library/Frameworks/SDL2.framework; sourceTree = "<group>"; };
+		5EDECA3A1D42010900DBCB9E /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +38,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5EDECA391D41FFB400DBCB9E /* SDL2.framework in Frameworks */,
+				5EDECA351D41FD3600DBCB9E /* OpenGL.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -41,7 +49,9 @@
 		5EDECA1C1D41D02E00DBCB9E = {
 			isa = PBXGroup;
 			children = (
+				5EDECA3A1D42010900DBCB9E /* README.md */,
 				5EDECA271D41D02E00DBCB9E /* GL_SDL */,
+				5EDECA331D41FD2100DBCB9E /* Frameworks */,
 				5EDECA261D41D02E00DBCB9E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -60,6 +70,15 @@
 				5EDECA281D41D02E00DBCB9E /* main.cpp */,
 			);
 			path = GL_SDL;
+			sourceTree = "<group>";
+		};
+		5EDECA331D41FD2100DBCB9E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5EDECA381D41FFB400DBCB9E /* SDL2.framework */,
+				5EDECA341D41FD3600DBCB9E /* OpenGL.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -118,6 +137,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5EDECA3B1D42010900DBCB9E /* README.md in Sources */,
 				5EDECA291D41D02E00DBCB9E /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -209,6 +229,11 @@
 		5EDECA2D1D41D02E00DBCB9E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+					"$(LOCAL_LIBRARY_DIR)/Frameworks",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -216,6 +241,11 @@
 		5EDECA2E1D41D02E00DBCB9E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+					"$(LOCAL_LIBRARY_DIR)/Frameworks",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
