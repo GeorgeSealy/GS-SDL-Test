@@ -14,7 +14,7 @@
 
 #include <SDL2/SDL.h>
 #include <OpenGL/OpenGL.h>
-#include <OpenGL/gl.h>
+#include <OpenGL/gl3.h>
 
 #include <mach/mach_time.h>
 
@@ -115,9 +115,9 @@ GLuint compileShader(const char *shaderFilename, ShaderType shaderType) {
     }
 
     glShaderSource(shader, 1, (const GLchar**)&shaderSource, 0);
-    
-    /* Compile the vertex shader */
     glCompileShader(shader);
+    
+    free(shaderSource);
     
     int isShaderCompiled;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &isShaderCompiled);
@@ -139,8 +139,53 @@ GLuint compileShader(const char *shaderFilename, ShaderType shaderType) {
     return shader;
 }
 
+GLuint linkShaders(GLuint vertexShader, GLuint fragmentShader) {
+    GLuint shaderProgram = glCreateProgram();
+    
+    /* Attach our shaders to our program */
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    
+    // TODO: (George) Handle this in a more re-usable way
+    glBindAttribLocation(shaderProgram, 0, "in_Position");
+    glBindAttribLocation(shaderProgram, 1, "in_Color");
+    
+    glLinkProgram(shaderProgram);
+
+    int isLinked;
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &isLinked);
+    if (isLinked == FALSE) {
+        int maxLength;
+        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &maxLength);
+        
+        char *infoLog = (char *)malloc(maxLength);
+        
+        glGetProgramInfoLog(shaderProgram, maxLength, &maxLength, infoLog);
+        
+        free(infoLog);
+        
+        return 0;
+    }
+    
+    return shaderProgram;
+}
+
 GLuint vertexShader = 0;
 GLuint fragmentShader = 0;
+GLuint shaderProgram = 0;
+GLuint vao, vbo[2];
+
+const GLfloat diamond[4][2] = {
+    {  0.0,  1.0  }, /* Top point */
+    {  1.0,  0.0  }, /* Right point */
+    {  0.0, -1.0  }, /* Bottom point */
+    { -1.0,  0.0  } }; /* Left point */
+
+const GLfloat colors[4][3] = {
+    {  1.0,  0.0,  0.0  }, /* Red */
+    {  0.0,  1.0,  0.0  }, /* Green */
+    {  0.0,  0.0,  1.0  }, /* Blue */
+    {  1.0,  1.0,  1.0  } }; /* White */
 
 void setupGL() {
 
@@ -148,6 +193,28 @@ void setupGL() {
     fragmentShader = compileShader("Assets/Shaders/SimpleFrag.glsl", ShaderTypeFragment);
     
     printf("Shaders: %u, %u\n", vertexShader, fragmentShader);
+    
+    shaderProgram = linkShaders(vertexShader, fragmentShader);
+    printf("Program: %u\n", shaderProgram);
+    
+    glUseProgram(shaderProgram);
+    
+    glGenVertexArrays(1, &vao);
+    printf("VAO: %u\n", vao);
+    
+    glBindVertexArray(vao);
+    glGenBuffers(2, vbo);
+    printf("VBOs: %u, %u\n", vbo[0], vbo[1]);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+    glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(GLfloat), diamond, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(GLfloat), colors, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(1);
 }
 
 Timer timer = Timer();
@@ -220,7 +287,7 @@ void runMainLoop(SDL_Window *window) {
             //            integrate( state, t, dt );
             r += dt;
             
-            if (r > 1.0) {
+            if (r > 0.4) {
                 r = 0.0;
             }
             
@@ -234,13 +301,21 @@ void runMainLoop(SDL_Window *window) {
 
         
 //        render( state );
-        glClearColor ( r, 0.0, 0.0, 1.0 );
+        glClearColor ( 0.0, 0.0, 0.0, 1.0 );
         glClear ( GL_COLOR_BUFFER_BIT );
+        
+        glUseProgram(shaderProgram);
+        glDrawArrays(GL_LINE_LOOP, 0, 4);
         
         SDL_GL_SwapWindow(window);
         
         // GAME STATE RENDER - END
     }
+
+    // Clean up GL
+    glUseProgram(0);
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
     
 }
 
