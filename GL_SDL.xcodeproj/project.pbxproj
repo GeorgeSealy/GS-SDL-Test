@@ -30,6 +30,7 @@
 		5EDECA341D41FD3600DBCB9E /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		5EDECA381D41FFB400DBCB9E /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../Library/Frameworks/SDL2.framework; sourceTree = "<group>"; };
 		5EDECA3A1D42010900DBCB9E /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		5EFC6D2C1D43346A00DA1E1E /* Assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Assets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,6 +51,7 @@
 			children = (
 				5EDECA3A1D42010900DBCB9E /* README.md */,
 				5EDECA271D41D02E00DBCB9E /* GL_SDL */,
+				5EFC6D2C1D43346A00DA1E1E /* Assets */,
 				5EDECA331D41FD2100DBCB9E /* Frameworks */,
 				5EDECA261D41D02E00DBCB9E /* Products */,
 			);
@@ -267,6 +269,7 @@
 				5EDECA2E1D41D02E00DBCB9E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

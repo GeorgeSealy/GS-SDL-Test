@@ -66,6 +66,89 @@ void checkSDLError(int line = -1)
 #endif
 }
 
+char *fileToCharArray(const char *file)
+{
+    FILE *fptr;
+    long length;
+    char *buf;
+    
+    fptr = fopen(file, "rb"); /* Open file for reading */
+    if (!fptr) /* Return NULL on failure */
+        return NULL;
+    
+    fseek(fptr, 0, SEEK_END); /* Seek to the end of the file */
+    length = ftell(fptr); /* Find out how many bytes into the file we are */
+    buf = (char*)malloc(length+1); /* Allocate a buffer for the entire length of the file and a null terminator */
+    fseek(fptr, 0, SEEK_SET); /* Go back to the beginning of the file */
+    fread(buf, length, 1, fptr); /* Read the contents of the file in to the buffer */
+    fclose(fptr); /* Close the file */
+    buf[length] = 0; /* Null terminator */
+    
+    return buf; /* Return the buffer */
+}
+
+typedef enum {
+    ShaderTypeVertex,
+    ShaderTypeFragment,
+    ShaderTypeGeometry,
+} ShaderType;
+
+GLuint compileShader(const char *shaderFilename, ShaderType shaderType) {
+    GLchar *shaderSource;
+    GLuint shader;
+
+    shaderSource = fileToCharArray(shaderFilename);
+
+    switch (shaderType) {
+        case ShaderTypeVertex:
+            shader = glCreateShader(GL_VERTEX_SHADER);
+            break;
+            
+        case ShaderTypeFragment:
+            shader = glCreateShader(GL_FRAGMENT_SHADER);
+            break;
+            
+        default:
+            
+            sdldie("Unhandled shader type in compileShader()");
+            return 0;
+    }
+
+    glShaderSource(shader, 1, (const GLchar**)&shaderSource, 0);
+    
+    /* Compile the vertex shader */
+    glCompileShader(shader);
+    
+    int isShaderCompiled;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &isShaderCompiled);
+    
+    if (isShaderCompiled == FALSE) {
+        int maxLength;
+        
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+        char *infoLog = (char *)malloc(maxLength);
+        
+        glGetShaderInfoLog(shader, maxLength, &maxLength, infoLog);
+
+        printf("Error compiling shader: %s\n", shaderFilename);
+        printf("Error: %s\n", infoLog);
+        free(infoLog);
+        return 0;
+    }
+    
+    return shader;
+}
+
+GLuint vertexShader = 0;
+GLuint fragmentShader = 0;
+
+void setupGL() {
+
+    vertexShader = compileShader("Assets/Shaders/SimpleVert.glsl", ShaderTypeVertex);
+    fragmentShader = compileShader("Assets/Shaders/SimpleFrag.glsl", ShaderTypeFragment);
+    
+    printf("Shaders: %u, %u\n", vertexShader, fragmentShader);
+}
 
 Timer timer = Timer();
 
@@ -105,6 +188,8 @@ void deleteWindowAndContext(SDL_Window *window, SDL_GLContext &context) {
 void runMainLoop(SDL_Window *window) {
     
     bool quit = false;
+    
+    setupGL();
     
     double t = 0.0;
     const double dt = 1.0 / 60.0;
