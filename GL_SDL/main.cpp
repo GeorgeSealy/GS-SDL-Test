@@ -86,6 +86,14 @@ Mesh buildGridMesh(int squaresPerSide, int axis, bool flipped) {
             verts[vertIndex + axisY] = y;
             verts[vertIndex + axisZ] = sz;
             
+            normalize(&verts[vertIndex]);
+            
+            float scaleFactor = 1.0 + drand48() * 0.2;
+            
+            verts[vertIndex + 0] *= scaleFactor;
+            verts[vertIndex + 1] *= scaleFactor;
+            verts[vertIndex + 2] *= scaleFactor;
+            
             cols[vertIndex + axisX] = ((j % 2) == 0) ? 0.0 : 1.0;
             cols[vertIndex + axisY] = ((i % 2) == 0) ? 0.0 : 1.0;
             cols[vertIndex + axisZ] = 0.0;
