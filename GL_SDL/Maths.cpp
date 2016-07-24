@@ -117,7 +117,7 @@ void setCamera(float posX, float posY, float posZ,
     
     float dir[3], right[3], up[3];
     
-    up[0] = 0.0f;   up[1] = 1.0f;   up[2] = 0.0f;
+    up[0] = 0.0f;   up[1] = 0.0f;   up[2] = 1.0f;
     
     dir[0] =  (lookAtX - posX);
     dir[1] =  (lookAtY - posY);

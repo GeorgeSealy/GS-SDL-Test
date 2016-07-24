@@ -21,6 +21,7 @@
 #include "Maths.cpp"
 #include "Utils.cpp"
 #include "GLUtils.cpp"
+#include "Mesh.cpp"
 
 #define PROGRAM_NAME "GL Skeleton"
 
@@ -48,98 +49,101 @@ void checkSDLError(int line = -1)
 #endif
 }
 
-struct Mesh {
-    GLuint vao = 0;
-    GLuint vertexBuffer[2] = {0, 0};
-    GLuint indexBuffer = 0;
-    int numVertices = 0;
-    int numIndices = 0;
-    
-    void setup(int numVerts, float *verts, float *colors, int numInds, ushort *indices) {
-        
-        if (vao == 0) {
-            printf("Mesh setup\n");
-            glGenVertexArrays(1, &vao);
-            printf("VAO: %u\n", vao);
-            
-            glGenBuffers(2, vertexBuffer);
-            printf("VBOs: %u, %u\n", vertexBuffer[0], vertexBuffer[1]);
-            
-            glGenBuffers(1, &indexBuffer);
-            printf("IBO: %u\n", indexBuffer);
-        }
-        
-        glBindVertexArray(vao);
-        
-        numVertices = numVerts;
-        numIndices = numInds;
-        
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[0]);
-        glBufferData(GL_ARRAY_BUFFER, numVertices * 4 * sizeof(GLfloat), verts, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-        glEnableVertexAttribArray(0);
-        
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[1]);
-        glBufferData(GL_ARRAY_BUFFER, numVertices * 3 * sizeof(GLfloat), colors, GL_STATIC_DRAW);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-        glEnableVertexAttribArray(1);
-        
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, numIndices * sizeof(GLushort), indices, GL_STATIC_DRAW);
-    }
-    
-    void draw() {
-        glBindVertexArray(vao);
-
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[0]);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[1]);
-        glBindBuffer(GL_ARRAY_BUFFER, indexBuffer);
-        
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-
-        glDrawElements(GL_TRIANGLE_STRIP, numIndices, GL_UNSIGNED_SHORT, 0);
-    }
-};
-
 GLuint vertexShader = 0;
 GLuint geometryShader = 0;
 GLuint fragmentShader = 0;
 GLuint shaderProgram = 0;
-GLuint vao, vbo[3];
 
-const GLfloat verts[4][4] = {
-//    {  1.0,  1.0,  1.0,  1.0  },
-//    { 0.5, 0.5,  1.0,  1.0  },
-//    { 0.5,  1.0, -1.0,  1.0  },
-//    {  1.0, 0.5, -1.0,  1.0  },
-    {  0.5,  0.5,  0.0,  1.0  },
-    { -0.5, -0.5,  0.0,  1.0  },
-    { -0.5,  0.5,  0.0,  1.0  },
-    {  0.5, -0.5,  0.0,  1.0  },
-//    {  0.5,  0.5,  -5.0,  1.0  },
-//    { -0.5, -0.5,  -5.0,  1.0  },
-//    { -0.5,  0.5,  -5.0,  1.0  },
-//    {  0.5, -0.5,  -5.0,  1.0  },
-//    {  1.0,  1.0,  1.0,  1.0  },
-//    { -1.0, -1.0,  1.0,  1.0  },
-//    { -1.0,  1.0, -1.0,  1.0  },
-//    {  1.0, -1.0, -1.0,  1.0  },
-};
+Mesh buildGridMesh(int squaresPerSide, int axis, bool flipped) {
+    
+    float flipMultiplier = flipped ? -1.0 : 1.0;
+    
+    float sx = flipMultiplier * -1.0;
+    float sy = flipMultiplier * -1.0;
+    float sz = flipMultiplier;
+    
+    float incx = flipMultiplier * 2.0 / squaresPerSide;
+    float incy = flipMultiplier * 2.0 / squaresPerSide;
+    
+    int axisX = (axis + 1) % 3;
+    int axisY = (axis + 2) % 3;
+    int axisZ = axis % 3;
+    
+    int numVerts = (squaresPerSide + 1) * (squaresPerSide + 1);
 
-const GLfloat colors[4][3] = {
-    {  1.0,  0.0,  0.0  },
-    {  0.0,  1.0,  0.0  },
-    {  0.0,  0.0,  1.0  },
-    {  1.0,  1.0,  1.0  },
-};
+    float *verts = (float *)malloc(sizeof(float) * 3 * numVerts);
+    float *cols = (float *)malloc(sizeof(float) * 3 * numVerts);
 
-const GLushort indices[6] = { 0, 1, 2, 3, 0, 1 };
+    int vertIndex = 0;
+    for (int j = 0; j <= squaresPerSide; ++j) {
+        float y = sy + j * incy;
+        
+        for (int i = 0; i <= squaresPerSide; ++i) {
+            
+            float x = sx + i * incx;
+            
+            verts[vertIndex + axisX] = x;
+            verts[vertIndex + axisY] = y;
+            verts[vertIndex + axisZ] = sz;
+            
+            cols[vertIndex + axisX] = ((j % 2) == 0) ? 0.0 : 1.0;
+            cols[vertIndex + axisY] = ((i % 2) == 0) ? 0.0 : 1.0;
+            cols[vertIndex + axisZ] = 0.0;
+            
+            vertIndex += 3;
+        }
+    }
+    
+    int numIndices = (2 * (squaresPerSide + 1)) * squaresPerSide;
+    ushort *indices = (ushort *)malloc(sizeof(ushort) * numIndices);
 
-Mesh mesh;
+    int index = 0;
+    
+    for (int j = 0; j < squaresPerSide; ++j) {
+        for (int i = 0; i <= squaresPerSide; ++i) {
+            
+            if ((j % 2) == 0) {
+                
+                ushort baseIndex = j * (squaresPerSide + 1) + i;
+                
+                indices[index + 0] = baseIndex;
+                indices[index + 1] = baseIndex + (squaresPerSide + 1);
+                
+            } else {
+                
+                ushort baseIndex = j * (squaresPerSide + 1) + (squaresPerSide - i);
+                
+                indices[index + 0] = baseIndex + (squaresPerSide + 1);
+                indices[index + 1] = baseIndex;
+                
+            }
+            
+            index += 2;
+        }
+    }
+    
+    Mesh result;
+    
+    result.setup(numVerts, verts, cols, numIndices, indices);
+    
+    return result;
+}
+
+Mesh posXMesh;
+Mesh negXMesh;
+Mesh posYMesh;
+Mesh negYMesh;
+Mesh posZMesh;
+Mesh negZMesh;
 
 void setupGL() {
-    mesh.setup(4, (float *)verts, (float *)colors, 6, (ushort *)indices);
+    
+    posXMesh = buildGridMesh(32, 0, false);
+    negXMesh = buildGridMesh(32, 0, true);
+    posYMesh = buildGridMesh(32, 1, false);
+    negYMesh = buildGridMesh(32, 1, true);
+    posZMesh = buildGridMesh(32, 2, false);
+    negZMesh = buildGridMesh(32, 2, true);
 
     vertexShader = compileShader("Assets/Shaders/SimpleCameraVertex.glsl", ShaderTypeVertex);
 //    geometryShader = compileShader("Assets/Shaders/SimpleCameraGeometry.glsl", ShaderTypeGeometry);
@@ -256,16 +260,19 @@ void runMainLoop(SDL_Window *window) {
         double sn = sin(radAngle);
         
         buildProjectionMatrix(45.0, 4.0 / 3.0, 0.1, 100.0);
-        setCamera(10.0 * cs, 10.0 * sn, 10.0, 0.0, 0.0, 0.0);
-//        multMatrix(viewMatrix, projMatrix);
+        setCamera(4.0 * cs, 4.0 * sn, 1.5, 0.0, 0.0, 0.0);
         multMatrix(projMatrix, viewMatrix);
         
-//        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvpmatrix"), 1, GL_FALSE, viewMatrix);
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvpmatrix"), 1, GL_FALSE, projMatrix);
         
         glUseProgram(shaderProgram);
         
-        mesh.draw();
+        posXMesh.draw();
+        negXMesh.draw();
+        posYMesh.draw();
+        negYMesh.draw();
+        posZMesh.draw();
+        negZMesh.draw();
         
         SDL_GL_SwapWindow(window);
         
