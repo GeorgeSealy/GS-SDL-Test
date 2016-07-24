@@ -24,6 +24,7 @@
 #include "Mesh.cpp"
 
 #define PROGRAM_NAME "GL Skeleton"
+const float planetRadius = 6000.0;
 
 /* A simple function that prints a message, the error code returned by SDL,
  * and quits the application */
@@ -88,7 +89,12 @@ Mesh buildGridMesh(int squaresPerSide, int axis, bool flipped) {
             
             normalize(verts[vertIndex]);
             
-            float scaleFactor = 1.0 + drand48() * 0.2;
+            float scaleFactor = verts[vertIndex][0] * verts[vertIndex][1] * verts[vertIndex][2];
+            
+            scaleFactor *= 10000.0;
+            scaleFactor = 5.0f * fmodf(fabsf(scaleFactor), 0.2f);
+            
+            scaleFactor = planetRadius * (1.0 + scaleFactor * 0.025);
             
             verts[vertIndex][0] *= scaleFactor;
             verts[vertIndex][1] *= scaleFactor;
@@ -150,12 +156,12 @@ Mesh negZMesh;
 
 void setupGL() {
     
-    posXMesh = buildGridMesh(32, 0, false);
-    negXMesh = buildGridMesh(32, 0, true);
-    posYMesh = buildGridMesh(32, 1, false);
-    negYMesh = buildGridMesh(32, 1, true);
-    posZMesh = buildGridMesh(32, 2, false);
-    negZMesh = buildGridMesh(32, 2, true);
+    posXMesh = buildGridMesh(128, 0, false);
+    negXMesh = buildGridMesh(128, 0, true);
+    posYMesh = buildGridMesh(128, 1, false);
+    negYMesh = buildGridMesh(128, 1, true);
+    posZMesh = buildGridMesh(128, 2, false);
+    negZMesh = buildGridMesh(128, 2, true);
 
     vertexShader = compileShader("Assets/Shaders/SimpleCameraVertex.glsl", ShaderTypeVertex);
 //    geometryShader = compileShader("Assets/Shaders/SimpleCameraGeometry.glsl", ShaderTypeGeometry);
@@ -303,7 +309,7 @@ void runMainLoop(SDL_Window *window) {
             }
             
             
-            angle += dt * 15.0;
+            angle += dt * 1.0;
             
             // GAME STATE UPDATE - END
             
@@ -328,21 +334,25 @@ void runMainLoop(SDL_Window *window) {
         Mat4x4 projectionMatrix;
         Mat4x4 viewMatrix;
         
-        buildProjectionMatrix(projectionMatrix, 45.0, 4.0 / 3.0, 0.1, 100.0);
+        buildProjectionMatrix(projectionMatrix, 45.0, 4.0 / 3.0, 0.1, 10000.0);
         
-        Vec3 from = {2.0f * cs, 2.0f * sn, 0.5};
-        Vec3 dir = {-from[1] - 3.0f * from[0], from[0] - 3.0f * from[1], -3.0f *  from[2]};
-//        Vec3 dir = {-from[1] - (0.3f * from[0]), from[0] - (0.3f * from[1]), 0.0};
-//        Vec3 to = {from[0] + dir[0], from[1] + dir[1], from[2] + dir[2]};
+        Vec3 from = {1.05f * cs, 1.05f * sn, 0.2};
+        Vec3 dir = {-from[1] - 0.4f * from[0], from[0] - 0.4f * from[1], 0.4f *  from[2]};
+        
+        from[0] *= planetRadius;
+        from[1] *= planetRadius;
+        from[2] *= planetRadius;
+        
+        dir[0] *= planetRadius;
+        dir[1] *= planetRadius;
+        dir[2] *= planetRadius;
         
         view.setPosition(from);
         view.setDirection(dir);
         view.updateForUpVector(from);
-//        Vec3 to = {0.0, 0.0, 0.0};
         
         view.getCameraMatrix(viewMatrix);
         
-//        setCamera(viewMatrix, from, to);
         multMatrix(projectionMatrix, viewMatrix);
         
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvpmatrix"), 1, GL_FALSE, projectionMatrix);
