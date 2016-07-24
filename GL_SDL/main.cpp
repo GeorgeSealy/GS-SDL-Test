@@ -71,8 +71,8 @@ Mesh buildGridMesh(int squaresPerSide, int axis, bool flipped) {
     
     int numVerts = (squaresPerSide + 1) * (squaresPerSide + 1);
 
-    float *verts = (float *)malloc(sizeof(float) * 3 * numVerts);
-    float *cols = (float *)malloc(sizeof(float) * 3 * numVerts);
+    Vec3 *verts = (Vec3 *)malloc(sizeof(Vec3) * numVerts);
+    Vec3 *cols = (Vec3 *)malloc(sizeof(Vec3) * numVerts);
 
     int vertIndex = 0;
     for (int j = 0; j <= squaresPerSide; ++j) {
@@ -82,23 +82,23 @@ Mesh buildGridMesh(int squaresPerSide, int axis, bool flipped) {
             
             float x = sx + i * incx;
             
-            verts[vertIndex + axisX] = x;
-            verts[vertIndex + axisY] = y;
-            verts[vertIndex + axisZ] = sz;
+            verts[vertIndex][axisX] = x;
+            verts[vertIndex][axisY] = y;
+            verts[vertIndex][axisZ] = sz;
             
-            normalize(&verts[vertIndex]);
+            normalize(verts[vertIndex]);
             
             float scaleFactor = 1.0 + drand48() * 0.2;
             
-            verts[vertIndex + 0] *= scaleFactor;
-            verts[vertIndex + 1] *= scaleFactor;
-            verts[vertIndex + 2] *= scaleFactor;
+            verts[vertIndex][0] *= scaleFactor;
+            verts[vertIndex][1] *= scaleFactor;
+            verts[vertIndex][2] *= scaleFactor;
             
-            cols[vertIndex + axisX] = ((j % 2) == 0) ? 0.0 : 1.0;
-            cols[vertIndex + axisY] = ((i % 2) == 0) ? 0.0 : 1.0;
-            cols[vertIndex + axisZ] = 0.0;
+            cols[vertIndex][axisX] = ((j % 2) == 0) ? 0.0 : 1.0;
+            cols[vertIndex][axisY] = ((i % 2) == 0) ? 0.0 : 1.0;
+            cols[vertIndex][axisZ] = 0.0;
             
-            vertIndex += 3;
+            vertIndex += 1;
         }
     }
     
@@ -133,6 +133,10 @@ Mesh buildGridMesh(int squaresPerSide, int axis, bool flipped) {
     Mesh result;
     
     result.setup(numVerts, verts, cols, numIndices, indices);
+    
+    free(verts);
+    free(cols);
+    free(indices);
     
     return result;
 }
@@ -203,7 +207,6 @@ void deleteWindowAndContext(SDL_Window *window, SDL_GLContext &context) {
     SDL_DestroyWindow(window);
 }
 
-
 void runMainLoop(SDL_Window *window) {
     
     bool quit = false;
@@ -264,14 +267,21 @@ void runMainLoop(SDL_Window *window) {
         glDepthFunc(GL_LESS);
         
         double radAngle = degToRad(angle);
-        double cs = cos(radAngle);
-        double sn = sin(radAngle);
+        float cs = cos(radAngle);
+        float sn = sin(radAngle);
         
-        buildProjectionMatrix(45.0, 4.0 / 3.0, 0.1, 100.0);
-        setCamera(4.0 * cs, 4.0 * sn, 1.5, 0.0, 0.0, 0.0);
-        multMatrix(projMatrix, viewMatrix);
+        Mat4x4 projectionMatrix;
+        Mat4x4 viewMatrix;
         
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvpmatrix"), 1, GL_FALSE, projMatrix);
+        buildProjectionMatrix(projectionMatrix, 45.0, 4.0 / 3.0, 0.1, 100.0);
+        
+        Vec3 from = {4.0f * cs, 4.0f * sn, 1.5};
+        Vec3 to = {0.0, 0.0, 0.0};
+        
+        setCamera(viewMatrix, from, to);
+        multMatrix(projectionMatrix, viewMatrix);
+        
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvpmatrix"), 1, GL_FALSE, projectionMatrix);
         
         glUseProgram(shaderProgram);
         

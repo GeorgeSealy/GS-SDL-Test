@@ -18,19 +18,23 @@ double radToDeg(double inRadians) {
 // VECTOR STUFF
 //
 
-float dotProduct( float *a, float *b) {
+
+typedef float Vec3[3];
+typedef float Mat4x4[16];
+
+float dotProduct(Vec3 a, Vec3 b) {
     
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
-void crossProduct( float *a, float *b, float *res) {
+void crossProduct(Vec3 a, Vec3 b, Vec3 &res) {
     
     res[0] = a[1] * b[2]  -  b[1] * a[2];
     res[1] = a[2] * b[0]  -  b[2] * a[0];
     res[2] = a[0] * b[1]  -  b[0] * a[1];
 }
 
-void normalize(float *a) {
+void normalize(Vec3 &a) {
     
     float mag = sqrt(a[0] * a[0]  +  a[1] * a[1]  +  a[2] * a[2]);
     
@@ -45,7 +49,9 @@ void normalize(float *a) {
 
 // sets the square matrix mat to the identity matrix,
 // size refers to the number of rows (or columns)
-void setIdentityMatrix( float *mat, int size) {
+void setIdentityMatrix(Mat4x4 &mat) {
+    
+    int size = 4;
     
     // fill matrix with 0s
     for (int i = 0; i < size * size; ++i)
@@ -59,9 +65,9 @@ void setIdentityMatrix( float *mat, int size) {
 //
 // a = a * b;
 //
-void multMatrix(float *a, float *b) {
+void multMatrix(Mat4x4 &a, Mat4x4 b) {
     
-    float res[16];
+    Mat4x4 res;
     
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
@@ -71,31 +77,31 @@ void multMatrix(float *a, float *b) {
             }
         }
     }
-    memcpy(a, res, 16 * sizeof(float));
+    memcpy(a, res, sizeof(Mat4x4));
     
 }
 
 // Defines a transformation matrix mat with a translation
-void setTranslationMatrix(float *mat, float x, float y, float z) {
+void setTranslationMatrix(Mat4x4 &mat, float x, float y, float z) {
     
-    setIdentityMatrix(mat,4);
+    setIdentityMatrix(mat);
     mat[12] = x;
     mat[13] = y;
     mat[14] = z;
 }
 
-float projMatrix[16];
-float viewMatrix[16];
+//float projMatrix[16];
+//float viewMatrix[16];
 
 // ----------------------------------------------------
 // Projection Matrix
 //
 
-void buildProjectionMatrix(float fov, float ratio, float nearP, float farP) {
+void buildProjectionMatrix(Mat4x4 &projMatrix, float fov, float ratio, float nearP, float farP) {
     
     float f = 1.0f / tan (fov * (M_PI / 360.0));
     
-    setIdentityMatrix(projMatrix,4);
+    setIdentityMatrix(projMatrix);
     
     projMatrix[0] = f / ratio;
     projMatrix[1 * 4 + 1] = f;
@@ -112,16 +118,15 @@ void buildProjectionMatrix(float fov, float ratio, float nearP, float farP) {
 // i.e. a vertical up vector (remmeber gluLookAt?)
 //
 
-void setCamera(float posX, float posY, float posZ,
-               float lookAtX, float lookAtY, float lookAtZ) {
+void setCamera(Mat4x4 &viewMatrix, Vec3 pos, Vec3 lookAt) {
     
-    float dir[3], right[3], up[3];
+    Vec3 dir, right, up;
     
     up[0] = 0.0f;   up[1] = 0.0f;   up[2] = 1.0f;
     
-    dir[0] =  (lookAtX - posX);
-    dir[1] =  (lookAtY - posY);
-    dir[2] =  (lookAtZ - posZ);
+    dir[0] =  (lookAt[0] - pos[0]);
+    dir[1] =  (lookAt[1] - pos[1]);
+    dir[2] =  (lookAt[2] - pos[2]);
     normalize(dir);
     
     crossProduct(dir,up,right);
@@ -153,7 +158,7 @@ void setCamera(float posX, float posY, float posZ,
     viewMatrix[11] = 0.0f;
     viewMatrix[15] = 1.0f;
     
-    setTranslationMatrix(aux, -posX, -posY, -posZ);
+    setTranslationMatrix(aux, -pos[0], -pos[1], -pos[2]);
     
     multMatrix(viewMatrix, aux);
 }
