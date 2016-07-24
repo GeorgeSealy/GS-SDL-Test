@@ -15,30 +15,12 @@
 #include <SDL2/SDL.h>
 #include <OpenGL/OpenGL.h>
 #include <OpenGL/gl3.h>
-
 #include <mach/mach_time.h>
 
-struct Timer {
-    double ticksToSeconds;
-    
-    uint64_t startTick;
-    
-    Timer() {
-        mach_timebase_info_data_t timebase_info;
-        mach_timebase_info(&timebase_info);
 
-//        const uint64_t NANOS_PER_MSEC = 1000000ULL;
-        ticksToSeconds = ((double)timebase_info.denom / (double)timebase_info.numer) / 1000000000.0;
-        
-        startTick = mach_absolute_time();
-    }
-    
-    double seconds() {
-        uint64_t nowTick = mach_absolute_time();
-        return (nowTick - startTick) * ticksToSeconds;
-    }
-};
-
+#include "Maths.cpp"
+#include "Utils.cpp"
+#include "GLUtils.cpp"
 
 #define PROGRAM_NAME "GL Skeleton"
 
@@ -66,114 +48,6 @@ void checkSDLError(int line = -1)
 #endif
 }
 
-char *fileToCharArray(const char *file)
-{
-    FILE *fptr;
-    long length;
-    char *buf;
-    
-    fptr = fopen(file, "rb"); /* Open file for reading */
-    if (!fptr) /* Return NULL on failure */
-        return NULL;
-    
-    fseek(fptr, 0, SEEK_END); /* Seek to the end of the file */
-    length = ftell(fptr); /* Find out how many bytes into the file we are */
-    buf = (char*)malloc(length+1); /* Allocate a buffer for the entire length of the file and a null terminator */
-    fseek(fptr, 0, SEEK_SET); /* Go back to the beginning of the file */
-    fread(buf, length, 1, fptr); /* Read the contents of the file in to the buffer */
-    fclose(fptr); /* Close the file */
-    buf[length] = 0; /* Null terminator */
-    
-    return buf; /* Return the buffer */
-}
-
-typedef enum {
-    ShaderTypeVertex,
-    ShaderTypeFragment,
-    ShaderTypeGeometry,
-} ShaderType;
-
-GLuint compileShader(const char *shaderFilename, ShaderType shaderType) {
-    GLchar *shaderSource;
-    GLuint shader;
-
-    shaderSource = fileToCharArray(shaderFilename);
-
-    switch (shaderType) {
-        case ShaderTypeVertex:
-            shader = glCreateShader(GL_VERTEX_SHADER);
-            break;
-            
-        case ShaderTypeFragment:
-            shader = glCreateShader(GL_FRAGMENT_SHADER);
-            break;
-            
-        case ShaderTypeGeometry:
-            shader = glCreateShader(GL_GEOMETRY_SHADER);
-            break;
-            
-        default:
-            
-            sdldie("Unhandled shader type in compileShader()");
-            return 0;
-    }
-
-    glShaderSource(shader, 1, (const GLchar**)&shaderSource, 0);
-    glCompileShader(shader);
-    
-    free(shaderSource);
-    
-    int isShaderCompiled;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &isShaderCompiled);
-    
-    if (isShaderCompiled == FALSE) {
-        int maxLength;
-        
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
-        char *infoLog = (char *)malloc(maxLength);
-        
-        glGetShaderInfoLog(shader, maxLength, &maxLength, infoLog);
-
-        printf("Error compiling shader: %s\n", shaderFilename);
-        printf("Error: %s\n", infoLog);
-        free(infoLog);
-        return 0;
-    }
-    
-    return shader;
-}
-
-GLuint linkShaders(GLuint vertexShader, GLuint geometryShader, GLuint fragmentShader) {
-    GLuint shaderProgram = glCreateProgram();
-    
-    /* Attach our shaders to our program */
-    glAttachShader(shaderProgram, vertexShader);
-//    glAttachShader(shaderProgram, geometryShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    
-    // TODO: (George) Handle this in a more re-usable way
-    glBindAttribLocation(shaderProgram, 0, "in_Position");
-    glBindAttribLocation(shaderProgram, 1, "in_Color");
-    
-    glLinkProgram(shaderProgram);
-
-    int isLinked;
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &isLinked);
-    if (isLinked == FALSE) {
-        int maxLength;
-        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &maxLength);
-        
-        char *infoLog = (char *)malloc(maxLength);
-        
-        glGetProgramInfoLog(shaderProgram, maxLength, &maxLength, infoLog);
-        
-        free(infoLog);
-        
-        return 0;
-    }
-    
-    return shaderProgram;
-}
 
 GLuint vertexShader = 0;
 GLuint geometryShader = 0;
@@ -283,77 +157,6 @@ void deleteWindowAndContext(SDL_Window *window, SDL_GLContext &context) {
 
 float projMatrix[16];
 float viewMatrix[16];
-
-double degToRad(double inDegrees) {
-    return inDegrees * M_PI / 180.0;
-}
-
-// ----------------------------------------------------
-// VECTOR STUFF
-//
-
-// res = a cross b;
-void crossProduct( float *a, float *b, float *res) {
-    
-    res[0] = a[1] * b[2]  -  b[1] * a[2];
-    res[1] = a[2] * b[0]  -  b[2] * a[0];
-    res[2] = a[0] * b[1]  -  b[0] * a[1];
-}
-
-// Normalize a vec3
-void normalize(float *a) {
-    
-    float mag = sqrt(a[0] * a[0]  +  a[1] * a[1]  +  a[2] * a[2]);
-    
-    a[0] /= mag;
-    a[1] /= mag;
-    a[2] /= mag;
-}
-
-// ----------------------------------------------------
-// MATRIX STUFF
-//
-
-// sets the square matrix mat to the identity matrix,
-// size refers to the number of rows (or columns)
-void setIdentityMatrix( float *mat, int size) {
-    
-    // fill matrix with 0s
-    for (int i = 0; i < size * size; ++i)
-        mat[i] = 0.0f;
-    
-    // fill diagonal with 1s
-    for (int i = 0; i < size; ++i)
-        mat[i + i * size] = 1.0f;
-}
-
-//
-// a = a * b;
-//
-void multMatrix(float *a, float *b) {
-    
-    float res[16];
-    
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            res[j*4 + i] = 0.0f;
-            for (int k = 0; k < 4; ++k) {
-                res[j*4 + i] += a[k*4 + i] * b[j*4 + k];
-            }
-        }
-    }
-    memcpy(a, res, 16 * sizeof(float));
-    
-}
-
-// Defines a transformation matrix mat with a translation
-void setTranslationMatrix(float *mat, float x, float y, float z) {
-    
-    setIdentityMatrix(mat,4);
-    mat[12] = x;
-    mat[13] = y;
-    mat[14] = z;
-}
 
 // ----------------------------------------------------
 // Projection Matrix

@@ -25,6 +25,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5E3484651D446E2500A9D948 /* Maths.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Maths.cpp; sourceTree = "<group>"; };
+		5E3484671D446FBF00A9D948 /* Utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Utils.cpp; sourceTree = "<group>"; };
+		5E3484691D4470B700A9D948 /* GLUtils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GLUtils.cpp; sourceTree = "<group>"; };
 		5EDECA251D41D02E00DBCB9E /* GL_SDL */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GL_SDL; sourceTree = BUILT_PRODUCTS_DIR; };
 		5EDECA281D41D02E00DBCB9E /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		5EDECA341D41FD3600DBCB9E /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
@@ -69,6 +72,9 @@
 			isa = PBXGroup;
 			children = (
 				5EDECA281D41D02E00DBCB9E /* main.cpp */,
+				5E3484651D446E2500A9D948 /* Maths.cpp */,
+				5E3484671D446FBF00A9D948 /* Utils.cpp */,
+				5E3484691D4470B700A9D948 /* GLUtils.cpp */,
 			);
 			path = GL_SDL;
 			sourceTree = "<group>";

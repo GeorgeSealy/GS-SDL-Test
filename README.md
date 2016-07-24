@@ -1,7 +1,5 @@
 # Things To Do
 
-- Perspective render
-- Moveable camera (in code, not interactive)
 - Render basic cube mesh
 - Simple interactive camera model to move around (FLYING)
 - Update to Spherised-cube
@@ -21,3 +19,5 @@
 - High res timing info (nanoseconds)
 - "Good" render loop
 - Render basic shape with a shader
+- Perspective render
+- Moveable camera (in code, not interactive)
