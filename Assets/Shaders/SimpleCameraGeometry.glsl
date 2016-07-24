@@ -5,7 +5,6 @@ in  vec3 in_Color;
 
 // We output the ex_Color variable to the next shader in the chain
 out vec3 ex_Color;
-
 void main(void) {
     // Since we are using flat lines, our input only had two points: x and y.
     // Set the Z coordinate to 0 and W coordinate to 1

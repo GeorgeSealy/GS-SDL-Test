@@ -108,6 +108,10 @@ GLuint compileShader(const char *shaderFilename, ShaderType shaderType) {
             shader = glCreateShader(GL_FRAGMENT_SHADER);
             break;
             
+        case ShaderTypeGeometry:
+            shader = glCreateShader(GL_GEOMETRY_SHADER);
+            break;
+            
         default:
             
             sdldie("Unhandled shader type in compileShader()");
@@ -139,11 +143,12 @@ GLuint compileShader(const char *shaderFilename, ShaderType shaderType) {
     return shader;
 }
 
-GLuint linkShaders(GLuint vertexShader, GLuint fragmentShader) {
+GLuint linkShaders(GLuint vertexShader, GLuint geometryShader, GLuint fragmentShader) {
     GLuint shaderProgram = glCreateProgram();
     
     /* Attach our shaders to our program */
     glAttachShader(shaderProgram, vertexShader);
+//    glAttachShader(shaderProgram, geometryShader);
     glAttachShader(shaderProgram, fragmentShader);
     
     // TODO: (George) Handle this in a more re-usable way
@@ -171,30 +176,48 @@ GLuint linkShaders(GLuint vertexShader, GLuint fragmentShader) {
 }
 
 GLuint vertexShader = 0;
+GLuint geometryShader = 0;
 GLuint fragmentShader = 0;
 GLuint shaderProgram = 0;
-GLuint vao, vbo[2];
+GLuint vao, vbo[3];
 
-const GLfloat diamond[4][2] = {
-    {  0.0,  1.0  }, /* Top point */
-    {  1.0,  0.0  }, /* Right point */
-    {  0.0, -1.0  }, /* Bottom point */
-    { -1.0,  0.0  } }; /* Left point */
+const GLfloat verts[4][4] = {
+//    {  1.0,  1.0,  1.0,  1.0  },
+//    { 0.5, 0.5,  1.0,  1.0  },
+//    { 0.5,  1.0, -1.0,  1.0  },
+//    {  1.0, 0.5, -1.0,  1.0  },
+    {  0.5,  0.5,  0.0,  1.0  },
+    { -0.5, -0.5,  0.0,  1.0  },
+    { -0.5,  0.5,  0.0,  1.0  },
+    {  0.5, -0.5,  0.0,  1.0  },
+//    {  0.5,  0.5,  -5.0,  1.0  },
+//    { -0.5, -0.5,  -5.0,  1.0  },
+//    { -0.5,  0.5,  -5.0,  1.0  },
+//    {  0.5, -0.5,  -5.0,  1.0  },
+//    {  1.0,  1.0,  1.0,  1.0  },
+//    { -1.0, -1.0,  1.0,  1.0  },
+//    { -1.0,  1.0, -1.0,  1.0  },
+//    {  1.0, -1.0, -1.0,  1.0  },
+};
 
 const GLfloat colors[4][3] = {
-    {  1.0,  0.0,  0.0  }, /* Red */
-    {  0.0,  1.0,  0.0  }, /* Green */
-    {  0.0,  0.0,  1.0  }, /* Blue */
-    {  1.0,  1.0,  1.0  } }; /* White */
+    {  1.0,  0.0,  0.0  },
+    {  0.0,  1.0,  0.0  },
+    {  0.0,  0.0,  1.0  },
+    {  1.0,  1.0,  1.0  },
+};
+
+const GLubyte indices[6] = { 0, 1, 2, 3, 0, 1 };
 
 void setupGL() {
 
-    vertexShader = compileShader("Assets/Shaders/SimpleVert.glsl", ShaderTypeVertex);
-    fragmentShader = compileShader("Assets/Shaders/SimpleFrag.glsl", ShaderTypeFragment);
+    vertexShader = compileShader("Assets/Shaders/SimpleCameraVertex.glsl", ShaderTypeVertex);
+//    geometryShader = compileShader("Assets/Shaders/SimpleCameraGeometry.glsl", ShaderTypeGeometry);
+    fragmentShader = compileShader("Assets/Shaders/SimpleCameraFragment.glsl", ShaderTypeFragment);
     
-    printf("Shaders: %u, %u\n", vertexShader, fragmentShader);
+    printf("Shaders: %u, %u, %u\n", vertexShader, geometryShader, fragmentShader);
     
-    shaderProgram = linkShaders(vertexShader, fragmentShader);
+    shaderProgram = linkShaders(vertexShader, geometryShader, fragmentShader);
     printf("Program: %u\n", shaderProgram);
     
     glUseProgram(shaderProgram);
@@ -203,18 +226,22 @@ void setupGL() {
     printf("VAO: %u\n", vao);
     
     glBindVertexArray(vao);
-    glGenBuffers(2, vbo);
-    printf("VBOs: %u, %u\n", vbo[0], vbo[1]);
+    glGenBuffers(3, vbo);
+    printf("VBOs: %u, %u, %u\n", vbo[0], vbo[1], vbo[2]);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-    glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(GLfloat), diamond, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glBufferData(GL_ARRAY_BUFFER, 4 * 4 * sizeof(GLfloat), verts, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
     
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(GLfloat), colors, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 4 * 3 * sizeof(GLfloat), colors, GL_STATIC_DRAW);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(1);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLubyte), indices, GL_STATIC_DRAW);
+
 }
 
 Timer timer = Timer();
@@ -229,6 +256,8 @@ void initWindowAndContext(SDL_Window **window, SDL_GLContext *context) {
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     
@@ -252,6 +281,151 @@ void deleteWindowAndContext(SDL_Window *window, SDL_GLContext &context) {
     SDL_DestroyWindow(window);
 }
 
+float projMatrix[16];
+float viewMatrix[16];
+
+double degToRad(double inDegrees) {
+    return inDegrees * M_PI / 180.0;
+}
+
+// ----------------------------------------------------
+// VECTOR STUFF
+//
+
+// res = a cross b;
+void crossProduct( float *a, float *b, float *res) {
+    
+    res[0] = a[1] * b[2]  -  b[1] * a[2];
+    res[1] = a[2] * b[0]  -  b[2] * a[0];
+    res[2] = a[0] * b[1]  -  b[0] * a[1];
+}
+
+// Normalize a vec3
+void normalize(float *a) {
+    
+    float mag = sqrt(a[0] * a[0]  +  a[1] * a[1]  +  a[2] * a[2]);
+    
+    a[0] /= mag;
+    a[1] /= mag;
+    a[2] /= mag;
+}
+
+// ----------------------------------------------------
+// MATRIX STUFF
+//
+
+// sets the square matrix mat to the identity matrix,
+// size refers to the number of rows (or columns)
+void setIdentityMatrix( float *mat, int size) {
+    
+    // fill matrix with 0s
+    for (int i = 0; i < size * size; ++i)
+        mat[i] = 0.0f;
+    
+    // fill diagonal with 1s
+    for (int i = 0; i < size; ++i)
+        mat[i + i * size] = 1.0f;
+}
+
+//
+// a = a * b;
+//
+void multMatrix(float *a, float *b) {
+    
+    float res[16];
+    
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            res[j*4 + i] = 0.0f;
+            for (int k = 0; k < 4; ++k) {
+                res[j*4 + i] += a[k*4 + i] * b[j*4 + k];
+            }
+        }
+    }
+    memcpy(a, res, 16 * sizeof(float));
+    
+}
+
+// Defines a transformation matrix mat with a translation
+void setTranslationMatrix(float *mat, float x, float y, float z) {
+    
+    setIdentityMatrix(mat,4);
+    mat[12] = x;
+    mat[13] = y;
+    mat[14] = z;
+}
+
+// ----------------------------------------------------
+// Projection Matrix
+//
+
+void buildProjectionMatrix(float fov, float ratio, float nearP, float farP) {
+    
+    float f = 1.0f / tan (fov * (M_PI / 360.0));
+    
+    setIdentityMatrix(projMatrix,4);
+    
+    projMatrix[0] = f / ratio;
+    projMatrix[1 * 4 + 1] = f;
+    projMatrix[2 * 4 + 2] = (farP + nearP) / (nearP - farP);
+    projMatrix[3 * 4 + 2] = (2.0f * farP * nearP) / (nearP - farP);
+    projMatrix[2 * 4 + 3] = -1.0f;
+    projMatrix[3 * 4 + 3] = 0.0f;
+}
+
+// ----------------------------------------------------
+// View Matrix
+//
+// note: it assumes the camera is not tilted,
+// i.e. a vertical up vector (remmeber gluLookAt?)
+//
+
+void setCamera(float posX, float posY, float posZ,
+               float lookAtX, float lookAtY, float lookAtZ) {
+    
+    float dir[3], right[3], up[3];
+    
+    up[0] = 0.0f;   up[1] = 1.0f;   up[2] = 0.0f;
+    
+    dir[0] =  (lookAtX - posX);
+    dir[1] =  (lookAtY - posY);
+    dir[2] =  (lookAtZ - posZ);
+    normalize(dir);
+    
+    crossProduct(dir,up,right);
+    normalize(right);
+    
+    crossProduct(right,dir,up);
+    normalize(up);
+    
+    float aux[16];
+    
+//    setIdentityMatrix(viewMatrix, 4);
+    viewMatrix[0]  = right[0];
+    viewMatrix[4]  = right[1];
+    viewMatrix[8]  = right[2];
+    viewMatrix[12] = 0.0f;
+    
+    viewMatrix[1]  = up[0];
+    viewMatrix[5]  = up[1];
+    viewMatrix[9]  = up[2];
+    viewMatrix[13] = 0.0f;
+    
+    viewMatrix[2]  = -dir[0];
+    viewMatrix[6]  = -dir[1];
+    viewMatrix[10] = -dir[2];
+    viewMatrix[14] =  0.0f;
+    
+    viewMatrix[3]  = 0.0f;
+    viewMatrix[7]  = 0.0f;
+    viewMatrix[11] = 0.0f;
+    viewMatrix[15] = 1.0f;
+    
+    setTranslationMatrix(aux, -posX, -posY, -posZ);
+    
+    multMatrix(viewMatrix, aux);
+}
+
 void runMainLoop(SDL_Window *window) {
     
     bool quit = false;
@@ -265,6 +439,7 @@ void runMainLoop(SDL_Window *window) {
     double accumulator = 0.0;
     
     double r = 0.0;
+    double angle = 0.0;
 
     // Basic run loop from http://gafferongames.com/game-physics/fix-your-timestep/
     // TODO: (George) Final interpolation between states for super smoothness
@@ -291,6 +466,9 @@ void runMainLoop(SDL_Window *window) {
                 r = 0.0;
             }
             
+            
+            angle += dt * 30.0;
+            
             // GAME STATE UPDATE - END
             
             accumulator -= dt;
@@ -301,11 +479,27 @@ void runMainLoop(SDL_Window *window) {
 
         
 //        render( state );
-        glClearColor ( 0.0, 0.0, 0.0, 1.0 );
-        glClear ( GL_COLOR_BUFFER_BIT );
+        glClearColor ( 0.2, 0.2, 0.4, 1.0 );
+        glClear ( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+        
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        
+        double radAngle = degToRad(angle);
+        double cs = cos(radAngle);
+        double sn = sin(radAngle);
+        
+        buildProjectionMatrix(45.0, 4.0 / 3.0, 0.1, 100.0);
+        setCamera(10.0 * cs, 10.0 * sn, 10.0, 0.0, 0.0, 0.0);
+//        multMatrix(viewMatrix, projMatrix);
+        multMatrix(projMatrix, viewMatrix);
+        
+//        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvpmatrix"), 1, GL_FALSE, viewMatrix);
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvpmatrix"), 1, GL_FALSE, projMatrix);
         
         glUseProgram(shaderProgram);
-        glDrawArrays(GL_LINE_LOOP, 0, 4);
+//        glDrawArrays(GL_LINE_LOOP, 0, 4);
+        glDrawElements(GL_TRIANGLE_STRIP, 6, GL_UNSIGNED_BYTE, 0);
         
         SDL_GL_SwapWindow(window);
         
