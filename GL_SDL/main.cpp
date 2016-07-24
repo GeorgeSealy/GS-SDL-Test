@@ -207,6 +207,59 @@ void deleteWindowAndContext(SDL_Window *window, SDL_GLContext &context) {
     SDL_DestroyWindow(window);
 }
 
+struct PointOfView {
+
+    Vec3 position;
+    Vec3 direction, right, up;
+    
+    void setPosition(Vec3 pos) {
+        memcpy(position, pos, sizeof(Vec3));
+    }
+    
+    void setDirection(Vec3 dir) {
+        memcpy(direction, dir, sizeof(Vec3));
+    }
+    
+    void updateForUpVector(Vec3 referenceUp) {
+        normalize(direction);
+        
+        crossProduct(direction, referenceUp, right);
+        normalize(right);
+        
+        crossProduct(right, direction, up);
+        normalize(up);
+
+    }
+    
+    void getCameraMatrix(Mat4x4 &viewMatrix) {
+        
+        viewMatrix[0]  = right[0];
+        viewMatrix[4]  = right[1];
+        viewMatrix[8]  = right[2];
+        viewMatrix[12] = 0.0f;
+        
+        viewMatrix[1]  = up[0];
+        viewMatrix[5]  = up[1];
+        viewMatrix[9]  = up[2];
+        viewMatrix[13] = 0.0f;
+        
+        viewMatrix[2]  = -direction[0];
+        viewMatrix[6]  = -direction[1];
+        viewMatrix[10] = -direction[2];
+        viewMatrix[14] =  0.0f;
+        
+        viewMatrix[3]  = 0.0f;
+        viewMatrix[7]  = 0.0f;
+        viewMatrix[11] = 0.0f;
+        viewMatrix[15] = 1.0f;
+        
+        Mat4x4 aux;
+        setTranslationMatrix(aux, -position[0], -position[1], -position[2]);
+        
+        multMatrix(viewMatrix, aux);
+    }
+};
+
 void runMainLoop(SDL_Window *window) {
     
     bool quit = false;
@@ -222,6 +275,8 @@ void runMainLoop(SDL_Window *window) {
     double r = 0.0;
     double angle = 0.0;
 
+    PointOfView view;
+    
     // Basic run loop from http://gafferongames.com/game-physics/fix-your-timestep/
     // TODO: (George) Final interpolation between states for super smoothness
     
@@ -248,7 +303,7 @@ void runMainLoop(SDL_Window *window) {
             }
             
             
-            angle += dt * 30.0;
+            angle += dt * 15.0;
             
             // GAME STATE UPDATE - END
             
@@ -275,10 +330,19 @@ void runMainLoop(SDL_Window *window) {
         
         buildProjectionMatrix(projectionMatrix, 45.0, 4.0 / 3.0, 0.1, 100.0);
         
-        Vec3 from = {4.0f * cs, 4.0f * sn, 1.5};
-        Vec3 to = {0.0, 0.0, 0.0};
+        Vec3 from = {2.0f * cs, 2.0f * sn, 0.5};
+        Vec3 dir = {-from[1] - 3.0f * from[0], from[0] - 3.0f * from[1], -3.0f *  from[2]};
+//        Vec3 dir = {-from[1] - (0.3f * from[0]), from[0] - (0.3f * from[1]), 0.0};
+//        Vec3 to = {from[0] + dir[0], from[1] + dir[1], from[2] + dir[2]};
         
-        setCamera(viewMatrix, from, to);
+        view.setPosition(from);
+        view.setDirection(dir);
+        view.updateForUpVector(from);
+//        Vec3 to = {0.0, 0.0, 0.0};
+        
+        view.getCameraMatrix(viewMatrix);
+        
+//        setCamera(viewMatrix, from, to);
         multMatrix(projectionMatrix, viewMatrix);
         
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvpmatrix"), 1, GL_FALSE, projectionMatrix);
