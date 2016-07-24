@@ -48,6 +48,59 @@ void checkSDLError(int line = -1)
 #endif
 }
 
+struct Mesh {
+    GLuint vao = 0;
+    GLuint vertexBuffer[2] = {0, 0};
+    GLuint indexBuffer = 0;
+    int numVertices = 0;
+    int numIndices = 0;
+    
+    void setup(int numVerts, float *verts, float *colors, int numInds, ushort *indices) {
+        
+        if (vao == 0) {
+            printf("Mesh setup\n");
+            glGenVertexArrays(1, &vao);
+            printf("VAO: %u\n", vao);
+            
+            glGenBuffers(2, vertexBuffer);
+            printf("VBOs: %u, %u\n", vertexBuffer[0], vertexBuffer[1]);
+            
+            glGenBuffers(1, &indexBuffer);
+            printf("IBO: %u\n", indexBuffer);
+        }
+        
+        glBindVertexArray(vao);
+        
+        numVertices = numVerts;
+        numIndices = numInds;
+        
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[0]);
+        glBufferData(GL_ARRAY_BUFFER, numVertices * 4 * sizeof(GLfloat), verts, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(0);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[1]);
+        glBufferData(GL_ARRAY_BUFFER, numVertices * 3 * sizeof(GLfloat), colors, GL_STATIC_DRAW);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(1);
+        
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, numIndices * sizeof(GLushort), indices, GL_STATIC_DRAW);
+    }
+    
+    void draw() {
+        glBindVertexArray(vao);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[0]);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[1]);
+        glBindBuffer(GL_ARRAY_BUFFER, indexBuffer);
+        
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+
+        glDrawElements(GL_TRIANGLE_STRIP, numIndices, GL_UNSIGNED_SHORT, 0);
+    }
+};
 
 GLuint vertexShader = 0;
 GLuint geometryShader = 0;
@@ -81,9 +134,12 @@ const GLfloat colors[4][3] = {
     {  1.0,  1.0,  1.0  },
 };
 
-const GLubyte indices[6] = { 0, 1, 2, 3, 0, 1 };
+const GLushort indices[6] = { 0, 1, 2, 3, 0, 1 };
+
+Mesh mesh;
 
 void setupGL() {
+    mesh.setup(4, (float *)verts, (float *)colors, 6, (ushort *)indices);
 
     vertexShader = compileShader("Assets/Shaders/SimpleCameraVertex.glsl", ShaderTypeVertex);
 //    geometryShader = compileShader("Assets/Shaders/SimpleCameraGeometry.glsl", ShaderTypeGeometry);
@@ -96,26 +152,6 @@ void setupGL() {
     
     glUseProgram(shaderProgram);
     
-    glGenVertexArrays(1, &vao);
-    printf("VAO: %u\n", vao);
-    
-    glBindVertexArray(vao);
-    glGenBuffers(3, vbo);
-    printf("VBOs: %u, %u, %u\n", vbo[0], vbo[1], vbo[2]);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-    glBufferData(GL_ARRAY_BUFFER, 4 * 4 * sizeof(GLfloat), verts, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glBufferData(GL_ARRAY_BUFFER, 4 * 3 * sizeof(GLfloat), colors, GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(1);
-    
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[2]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLubyte), indices, GL_STATIC_DRAW);
-
 }
 
 Timer timer = Timer();
@@ -155,79 +191,6 @@ void deleteWindowAndContext(SDL_Window *window, SDL_GLContext &context) {
     SDL_DestroyWindow(window);
 }
 
-float projMatrix[16];
-float viewMatrix[16];
-
-// ----------------------------------------------------
-// Projection Matrix
-//
-
-void buildProjectionMatrix(float fov, float ratio, float nearP, float farP) {
-    
-    float f = 1.0f / tan (fov * (M_PI / 360.0));
-    
-    setIdentityMatrix(projMatrix,4);
-    
-    projMatrix[0] = f / ratio;
-    projMatrix[1 * 4 + 1] = f;
-    projMatrix[2 * 4 + 2] = (farP + nearP) / (nearP - farP);
-    projMatrix[3 * 4 + 2] = (2.0f * farP * nearP) / (nearP - farP);
-    projMatrix[2 * 4 + 3] = -1.0f;
-    projMatrix[3 * 4 + 3] = 0.0f;
-}
-
-// ----------------------------------------------------
-// View Matrix
-//
-// note: it assumes the camera is not tilted,
-// i.e. a vertical up vector (remmeber gluLookAt?)
-//
-
-void setCamera(float posX, float posY, float posZ,
-               float lookAtX, float lookAtY, float lookAtZ) {
-    
-    float dir[3], right[3], up[3];
-    
-    up[0] = 0.0f;   up[1] = 1.0f;   up[2] = 0.0f;
-    
-    dir[0] =  (lookAtX - posX);
-    dir[1] =  (lookAtY - posY);
-    dir[2] =  (lookAtZ - posZ);
-    normalize(dir);
-    
-    crossProduct(dir,up,right);
-    normalize(right);
-    
-    crossProduct(right,dir,up);
-    normalize(up);
-    
-    float aux[16];
-    
-//    setIdentityMatrix(viewMatrix, 4);
-    viewMatrix[0]  = right[0];
-    viewMatrix[4]  = right[1];
-    viewMatrix[8]  = right[2];
-    viewMatrix[12] = 0.0f;
-    
-    viewMatrix[1]  = up[0];
-    viewMatrix[5]  = up[1];
-    viewMatrix[9]  = up[2];
-    viewMatrix[13] = 0.0f;
-    
-    viewMatrix[2]  = -dir[0];
-    viewMatrix[6]  = -dir[1];
-    viewMatrix[10] = -dir[2];
-    viewMatrix[14] =  0.0f;
-    
-    viewMatrix[3]  = 0.0f;
-    viewMatrix[7]  = 0.0f;
-    viewMatrix[11] = 0.0f;
-    viewMatrix[15] = 1.0f;
-    
-    setTranslationMatrix(aux, -posX, -posY, -posZ);
-    
-    multMatrix(viewMatrix, aux);
-}
 
 void runMainLoop(SDL_Window *window) {
     
@@ -301,8 +264,8 @@ void runMainLoop(SDL_Window *window) {
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvpmatrix"), 1, GL_FALSE, projMatrix);
         
         glUseProgram(shaderProgram);
-//        glDrawArrays(GL_LINE_LOOP, 0, 4);
-        glDrawElements(GL_TRIANGLE_STRIP, 6, GL_UNSIGNED_BYTE, 0);
+        
+        mesh.draw();
         
         SDL_GL_SwapWindow(window);
         
