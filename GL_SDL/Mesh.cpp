@@ -34,13 +34,13 @@ struct Mesh {
         
 //                printf("Verts:\n");
 //                for (int i = 0; i < numVertices; ++i) {
-//                    printf("  (%1.2f, %1.2f, %1.2f)\n", verts[3 * i + 0], verts[3 * i + 1], verts[3 * i + 2]);
+//                    printf("  (%1.2f, %1.2f, %1.2f)\n", verts[i][0], verts[i][1], verts[i][2]);
 //                }
-        //
-        //        printf("Indices:\n");
-        //        for (int i = 0; i < numIndices; ++i) {
-        //            printf("  (%u)\n", indices[i]);
-        //        }
+        
+//                printf("Indices:\n");
+//                for (int i = 0; i < numIndices; ++i) {
+//                    printf("  (%u)\n", indices[i]);
+//                }
         
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[0]);
         glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(Vec3), verts, GL_STATIC_DRAW);

@@ -22,19 +22,41 @@ double radToDeg(double inRadians) {
 typedef float Vec3[3];
 typedef float Mat4x4[16];
 
-float dotProduct(Vec3 a, Vec3 b) {
+void v3copy(Vec3 a, Vec3 b) {
+    memcpy(a, b, sizeof(Vec3));
+}
+
+void v3add(Vec3 a, Vec3 b) {
+    a[0] += b[0];
+    a[1] += b[1];
+    a[2] += b[2];
+}
+
+void v3sub(Vec3 a, Vec3 b) {
+    a[0] -= b[0];
+    a[1] -= b[1];
+    a[2] -= b[2];
+}
+
+void v3scale(Vec3 a, float scaleFactor) {
+    a[0] *= scaleFactor;
+    a[1] *= scaleFactor;
+    a[2] *= scaleFactor;
+}
+
+float v3dotProduct(Vec3 a, Vec3 b) {
     
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
-void crossProduct(Vec3 a, Vec3 b, Vec3 &res) {
+void v3crossProduct(Vec3 a, Vec3 b, Vec3 &res) {
     
     res[0] = a[1] * b[2]  -  b[1] * a[2];
     res[1] = a[2] * b[0]  -  b[2] * a[0];
     res[2] = a[0] * b[1]  -  b[0] * a[1];
 }
 
-void normalize(Vec3 &a) {
+void v3normalize(Vec3 &a) {
     
     float mag = sqrt(a[0] * a[0]  +  a[1] * a[1]  +  a[2] * a[2]);
     
@@ -127,13 +149,13 @@ void setCamera(Mat4x4 &viewMatrix, Vec3 pos, Vec3 lookAt) {
     dir[0] =  (lookAt[0] - pos[0]);
     dir[1] =  (lookAt[1] - pos[1]);
     dir[2] =  (lookAt[2] - pos[2]);
-    normalize(dir);
+    v3normalize(dir);
     
-    crossProduct(dir,up,right);
-    normalize(right);
+    v3crossProduct(dir,up,right);
+    v3normalize(right);
     
-    crossProduct(right,dir,up);
-    normalize(up);
+    v3crossProduct(right,dir,up);
+    v3normalize(up);
     
     float aux[16];
     

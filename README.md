@@ -1,5 +1,8 @@
 # Things To Do
 
+- Helper Odd/Even function
+- Rework vector to be a struct, and generally more concise
+- Likewise rework matrix?
 - Simple interactive camera model to move around (FLYING)
 - Update to quad tree chunk rendering
 - Normal (and UV?) info

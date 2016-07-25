@@ -55,20 +55,31 @@ GLuint geometryShader = 0;
 GLuint fragmentShader = 0;
 GLuint shaderProgram = 0;
 
-Mesh buildGridMesh(int squaresPerSide, int axis, bool flipped) {
+//Mesh buildGridMesh(int squaresPerSide, int axis, bool flipped) {
+Mesh buildGridMesh(int squaresPerSide, Vec3 startPt, Vec3 acrossDir, Vec3 upDir) {
     
-    float flipMultiplier = flipped ? -1.0 : 1.0;
+//    float flipMultiplier = flipped ? -1.0 : 1.0;
+//    
+//    float sx = flipMultiplier * -1.0;
+//    float sy = flipMultiplier * -1.0;
+//    float sz = flipMultiplier;
+//    
+//    float incx = flipMultiplier * 2.0 / squaresPerSide;
+//    float incy = flipMultiplier * 2.0 / squaresPerSide;
+//    
+//    int axisX = (axis + 1) % 3;
+//    int axisY = (axis + 2) % 3;
+//    int axisZ = axis % 3;
     
-    float sx = flipMultiplier * -1.0;
-    float sy = flipMultiplier * -1.0;
-    float sz = flipMultiplier;
+    Vec3 uStep;
+    Vec3 vStep;
+    float scaleFactor = 1.0 / squaresPerSide;
     
-    float incx = flipMultiplier * 2.0 / squaresPerSide;
-    float incy = flipMultiplier * 2.0 / squaresPerSide;
+    v3copy(uStep, acrossDir);
+    v3scale(uStep, scaleFactor);
     
-    int axisX = (axis + 1) % 3;
-    int axisY = (axis + 2) % 3;
-    int axisZ = axis % 3;
+    v3copy(vStep, upDir);
+    v3scale(vStep, scaleFactor);
     
     int numVerts = (squaresPerSide + 1) * (squaresPerSide + 1);
 
@@ -77,32 +88,54 @@ Mesh buildGridMesh(int squaresPerSide, int axis, bool flipped) {
 
     int vertIndex = 0;
     for (int j = 0; j <= squaresPerSide; ++j) {
-        float y = sy + j * incy;
+//        float y = sy + j * incy;
         
         for (int i = 0; i <= squaresPerSide; ++i) {
             
-            float x = sx + i * incx;
+//            float x = sx + i * incx;
             
-            verts[vertIndex][axisX] = x;
-            verts[vertIndex][axisY] = y;
-            verts[vertIndex][axisZ] = sz;
+            Vec3 &pt = verts[vertIndex];
+            Vec3 u, v;
             
-            normalize(verts[vertIndex]);
+            v3copy(u, uStep);
+            v3scale(u, i);
             
-            float scaleFactor = verts[vertIndex][0] * verts[vertIndex][1] * verts[vertIndex][2];
+            v3copy(v, vStep);
+            v3scale(v, j);
             
-            scaleFactor *= 10000.0;
+            v3copy(pt, startPt);
+            v3add(pt, u);
+            v3add(pt, v);
+            
+//            verts[vertIndex][axisX] = x;
+//            verts[vertIndex][axisY] = y;
+//            verts[vertIndex][axisZ] = sz;
+//            
+//            v3normalize(verts[vertIndex]);
+            
+            // TODO: (George) Move the normalisation / height code out of here into a separate function
+            // TODO: (George) Will require an "update mesh" function and stored arrays in mesh struct
+            v3normalize(pt);
+            
+            float scaleFactor = pt[0] * pt[1] * pt[2];
+            
+            scaleFactor *= 100.0;
             scaleFactor = 5.0f * fmodf(fabsf(scaleFactor), 0.2f);
             
             scaleFactor = planetRadius * (1.0 + scaleFactor * 0.025);
             
-            verts[vertIndex][0] *= scaleFactor;
-            verts[vertIndex][1] *= scaleFactor;
-            verts[vertIndex][2] *= scaleFactor;
+            v3scale(pt, scaleFactor);
+//            v3scale(pt, planetRadius);
             
-            cols[vertIndex][axisX] = ((j % 2) == 0) ? 0.0 : 1.0;
-            cols[vertIndex][axisY] = ((i % 2) == 0) ? 0.0 : 1.0;
-            cols[vertIndex][axisZ] = 0.0;
+//            cols[vertIndex][0] = j / (float)squaresPerSide;
+//            cols[vertIndex][1] = i / (float)squaresPerSide;
+//            cols[vertIndex][2] = (((j + i) % 2) == 0) ? 0.0 : 1.0;
+            cols[vertIndex][0] = ((j % 2) == 0) ? 0.0 : 1.0;
+            cols[vertIndex][1] = ((i % 2) == 0) ? 0.0 : 1.0;
+            cols[vertIndex][2] = 0.0;
+//            cols[vertIndex][axisX] = ((j % 2) == 0) ? 0.0 : 1.0;
+//            cols[vertIndex][axisY] = ((i % 2) == 0) ? 0.0 : 1.0;
+//            cols[vertIndex][axisZ] = 0.0;
             
             vertIndex += 1;
         }
@@ -156,12 +189,53 @@ Mesh negZMesh;
 
 void setupGL() {
     
-    posXMesh = buildGridMesh(128, 0, false);
-    negXMesh = buildGridMesh(128, 0, true);
-    posYMesh = buildGridMesh(128, 1, false);
-    negYMesh = buildGridMesh(128, 1, true);
-    posZMesh = buildGridMesh(128, 2, false);
-    negZMesh = buildGridMesh(128, 2, true);
+    int numSquaresPerSide = 16;
+    
+    Vec3 startPt = {1.0, -1.0, -1.0};
+    Vec3 across = {0.0, 2.0, 0.0};
+    Vec3 up = {0.0, 0.0, 2.0};
+    
+    posXMesh = buildGridMesh(numSquaresPerSide, startPt, across, up);
+    
+    startPt[0] = -1.0; startPt[1] = 1.0; startPt[2] = -1.0;
+    across[0] = 0.0; across[1] = -2.0; across[2] = 0.0;
+    
+    negXMesh = buildGridMesh(numSquaresPerSide, startPt, across, up);
+    
+    startPt[0] = 1.0; startPt[1] = 1.0; startPt[2] = -1.0;
+    across[0] = -2.0; across[1] = 0.0; across[2] = 0.0;
+    
+    posYMesh = buildGridMesh(numSquaresPerSide, startPt, across, up);
+    
+    startPt[0] = -1.0; startPt[1] = -1.0; startPt[2] = -1.0;
+    across[0] = 2.0; across[1] = 0.0; across[2] = 0.0;
+    
+    negYMesh = buildGridMesh(numSquaresPerSide, startPt, across, up);
+    
+    startPt[0] = -1.0; startPt[1] = -1.0; startPt[2] = 1.0;
+    across[0] = 2.0; across[1] = 0.0; across[2] = 0.0;
+    up[0] = 0.0; up[1] = 2.0; up[2] = 0.0;
+    
+    posZMesh = buildGridMesh(numSquaresPerSide, startPt, across, up);
+    
+    startPt[0] = -1.0; startPt[1] = -1.0; startPt[2] = -1.0;
+    across[0] = 2.0; across[1] = 0.0; across[2] = 0.0;
+//    up[0] = 0.0; up[1] = -2.0; up[2] = 0.0;
+    
+    negZMesh = buildGridMesh(numSquaresPerSide, startPt, across, up);
+
+
+//    negXMesh = buildGridMesh(128, {-1.0, -1.0, -1.0}, {0.0, 2.0, 0.0}, {0.0, 0.0, 2.0});
+//    posYMesh = buildGridMesh(128, 1, false);
+//    negYMesh = buildGridMesh(128, 1, true);
+//    posZMesh = buildGridMesh(128, 2, false);
+//    negZMesh = buildGridMesh(128, 2, true);
+//    posXMesh = buildGridMesh(128, 0, false);
+//    negXMesh = buildGridMesh(128, 0, true);
+//    posYMesh = buildGridMesh(128, 1, false);
+//    negYMesh = buildGridMesh(128, 1, true);
+//    posZMesh = buildGridMesh(128, 2, false);
+//    negZMesh = buildGridMesh(128, 2, true);
 
     vertexShader = compileShader("Assets/Shaders/SimpleCameraVertex.glsl", ShaderTypeVertex);
 //    geometryShader = compileShader("Assets/Shaders/SimpleCameraGeometry.glsl", ShaderTypeGeometry);
@@ -227,13 +301,13 @@ struct PointOfView {
     }
     
     void updateForUpVector(Vec3 referenceUp) {
-        normalize(direction);
+        v3normalize(direction);
         
-        crossProduct(direction, referenceUp, right);
-        normalize(right);
+        v3crossProduct(direction, referenceUp, right);
+        v3normalize(right);
         
-        crossProduct(right, direction, up);
-        normalize(up);
+        v3crossProduct(right, direction, up);
+        v3normalize(up);
 
     }
     
@@ -309,7 +383,7 @@ void runMainLoop(SDL_Window *window) {
             }
             
             
-            angle += dt * 1.0;
+            angle += dt * 10.0;
             
             // GAME STATE UPDATE - END
             
@@ -327,17 +401,23 @@ void runMainLoop(SDL_Window *window) {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         
-        double radAngle = degToRad(angle);
-        float cs = cos(radAngle);
-        float sn = sin(radAngle);
         
         Mat4x4 projectionMatrix;
         Mat4x4 viewMatrix;
         
-        buildProjectionMatrix(projectionMatrix, 45.0, 4.0 / 3.0, 0.1, 10000.0);
+        buildProjectionMatrix(projectionMatrix, 45.0, 4.0 / 3.0, 10.0, 50000.0);
         
-        Vec3 from = {1.05f * cs, 1.05f * sn, 0.2};
-        Vec3 dir = {-from[1] - 0.4f * from[0], from[0] - 0.4f * from[1], 0.4f *  from[2]};
+        double radAngle = degToRad(angle);
+        float cs = cos(radAngle);
+        float sn = sin(radAngle);
+        Vec3 from = {5.05f * cs, 5.05f * sn, 0.2};
+        Vec3 dir = {-from[0], -from[1], -from[2]};
+        Vec3 up = {0.0, 0.0, 1.0};
+//        Vec3 from = {4.05f * cs, 4.05f * sn, 0.2};
+//        Vec3 dir = {-from[1] - 1.4f * from[0], from[0] - 1.4f * from[1], 0.0};
+//        Vec3 from = {4.05f * cs, 4.05f * sn, 0.2};
+//        Vec3 dir = {-from[1] - 0.4f * from[0], from[0] - 0.4f * from[1], 0.4f *  from[2]};
+//        Vec3 from = {2.5, 2.5, 0.2};
         
         from[0] *= planetRadius;
         from[1] *= planetRadius;
@@ -349,7 +429,8 @@ void runMainLoop(SDL_Window *window) {
         
         view.setPosition(from);
         view.setDirection(dir);
-        view.updateForUpVector(from);
+//        view.updateForUpVector(from);
+        view.updateForUpVector(up);
         
         view.getCameraMatrix(viewMatrix);
         
