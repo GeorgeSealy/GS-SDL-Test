@@ -25,6 +25,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5E15ECF51D4CD7E1002D7040 /* Noise.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Noise.cpp; sourceTree = "<group>"; };
 		5E3484651D446E2500A9D948 /* Maths.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Maths.cpp; sourceTree = "<group>"; };
 		5E3484671D446FBF00A9D948 /* Utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Utils.cpp; sourceTree = "<group>"; };
 		5E3484691D4470B700A9D948 /* GLUtils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GLUtils.cpp; sourceTree = "<group>"; };
@@ -77,6 +78,7 @@
 				5E3484671D446FBF00A9D948 /* Utils.cpp */,
 				5E3484691D4470B700A9D948 /* GLUtils.cpp */,
 				5E34846A1D4489E100A9D948 /* Mesh.cpp */,
+				5E15ECF51D4CD7E1002D7040 /* Noise.cpp */,
 			);
 			path = GL_SDL;
 			sourceTree = "<group>";

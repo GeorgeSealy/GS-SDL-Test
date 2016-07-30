@@ -16,12 +16,13 @@
 #include <OpenGL/OpenGL.h>
 #include <OpenGL/gl3.h>
 #include <mach/mach_time.h>
-
+#include <math.h>
 
 #include "Maths.cpp"
 #include "Utils.cpp"
 #include "GLUtils.cpp"
 #include "Mesh.cpp"
+#include "Noise.cpp"
 
 #define PROGRAM_NAME "GL Skeleton"
 const float planetRadius = 6000.0;
@@ -119,10 +120,13 @@ Mesh buildGridMesh(int squaresPerSide, Vec3 startPt, Vec3 acrossDir, Vec3 upDir)
             
             float scaleFactor = pt[0] * pt[1] * pt[2];
             
-            scaleFactor *= 100.0;
-            scaleFactor = 5.0f * fmodf(fabsf(scaleFactor), 0.2f);
+            double n = noise(2.0 * pt[0], 2.0 * pt[1], 2.0 * pt[2]);
             
-            scaleFactor = planetRadius * (1.0 + scaleFactor * 0.025);
+//            scaleFactor *= 100.0;
+//            scaleFactor = 5.0f * fmodf(fabsf(scaleFactor), 0.2f);
+            
+//            scaleFactor = planetRadius * (1.0 + n * 0.025);
+            scaleFactor = planetRadius * (1.0 + n * 0.25);
             
             v3scale(pt, scaleFactor);
 //            v3scale(pt, planetRadius);
@@ -189,7 +193,7 @@ Mesh negZMesh;
 
 void setupGL() {
     
-    int numSquaresPerSide = 16;
+    int numSquaresPerSide = 64;
     
     Vec3 startPt = {1.0, -1.0, -1.0};
     Vec3 across = {0.0, 2.0, 0.0};
