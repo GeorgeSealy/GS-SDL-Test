@@ -3,6 +3,7 @@ uniform mat4 mvpmatrix;
 
 // in_Position was bound to attribute index 0 and in_Color was bound to attribute index 1
 in  vec3 in_Position;
+in  vec3 in_Normal;
 in  vec3 in_Color;
 
 out vec3 ex_Color;

@@ -85,6 +85,7 @@ Mesh buildGridMesh(int squaresPerSide, Vec3 startPt, Vec3 acrossDir, Vec3 upDir)
     int numVerts = (squaresPerSide + 1) * (squaresPerSide + 1);
 
     Vec3 *verts = (Vec3 *)malloc(sizeof(Vec3) * numVerts);
+    Vec3 *norms = (Vec3 *)malloc(sizeof(Vec3) * numVerts);
     Vec3 *cols = (Vec3 *)malloc(sizeof(Vec3) * numVerts);
 
     int vertIndex = 0;
@@ -121,25 +122,49 @@ Mesh buildGridMesh(int squaresPerSide, Vec3 startPt, Vec3 acrossDir, Vec3 upDir)
             float scaleFactor = pt[0] * pt[1] * pt[2];
             
             double n = noise(2.0 * pt[0], 2.0 * pt[1], 2.0 * pt[2]);
+            double n2 = noise(5.0 * pt[0], 5.0 * pt[1], 5.0 * pt[2]);
             
+            n += 0.5 * n2;
 //            scaleFactor *= 100.0;
 //            scaleFactor = 5.0f * fmodf(fabsf(scaleFactor), 0.2f);
             
 //            scaleFactor = planetRadius * (1.0 + n * 0.025);
-            scaleFactor = planetRadius * (1.0 + n * 0.25);
+            double multiplier = 0.25;
+            scaleFactor = planetRadius * (1.0 + n * multiplier);
             
             v3scale(pt, scaleFactor);
+            
+//            Vec3 &norm = norms[vertIndex];
+//            
+//            double dn[3];
+//            
+//            dNoise(dn, 4.0 * pt[0], 4.0 * pt[1], 4.0 * pt[2]);
+//            
+//            // TODO: (George) Figure this out better
+//            norm[0] = 0.0;
+//            norm[1] = 0.0;
+//            norm[2] = 1.0;
+            
 //            v3scale(pt, planetRadius);
             
-//            cols[vertIndex][0] = j / (float)squaresPerSide;
-//            cols[vertIndex][1] = i / (float)squaresPerSide;
-//            cols[vertIndex][2] = (((j + i) % 2) == 0) ? 0.0 : 1.0;
-            cols[vertIndex][0] = ((j % 2) == 0) ? 0.0 : 1.0;
-            cols[vertIndex][1] = ((i % 2) == 0) ? 0.0 : 1.0;
-            cols[vertIndex][2] = 0.0;
-//            cols[vertIndex][axisX] = ((j % 2) == 0) ? 0.0 : 1.0;
-//            cols[vertIndex][axisY] = ((i % 2) == 0) ? 0.0 : 1.0;
-//            cols[vertIndex][axisZ] = 0.0;
+            n += 0.25;
+            
+            if (n < 0.0) {
+                cols[vertIndex][0] = 0.2;
+                cols[vertIndex][1] = 0.2 - n * 0.5;
+                cols[vertIndex][2] = 1.0;
+            } else if (n < 1.0) {
+                cols[vertIndex][0] = 0.4 + 0.4 * n;
+                cols[vertIndex][1] = 0.8;
+                cols[vertIndex][2] = 0.2 + 0.6 * n;
+            } else {
+                cols[vertIndex][0] = 0.9;
+                cols[vertIndex][1] = 0.9;
+                cols[vertIndex][2] = 0.9;
+            }
+//            cols[vertIndex][0] = ((j % 2) == 0) ? 0.0 : 1.0;
+//            cols[vertIndex][1] = ((i % 2) == 0) ? 0.0 : 1.0;
+//            cols[vertIndex][2] = 0.0;
             
             vertIndex += 1;
         }
@@ -175,7 +200,7 @@ Mesh buildGridMesh(int squaresPerSide, Vec3 startPt, Vec3 acrossDir, Vec3 upDir)
     
     Mesh result;
     
-    result.setup(numVerts, verts, cols, numIndices, indices);
+    result.setup(numVerts, verts, norms, cols, numIndices, indices);
     
     free(verts);
     free(cols);

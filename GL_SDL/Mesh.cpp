@@ -8,20 +8,20 @@
 
 struct Mesh {
     GLuint vao = 0;
-    GLuint vertexBuffer[2] = {0, 0};
+    GLuint vertexBuffer[3] = {0, 0, 0};
     GLuint indexBuffer = 0;
     int numVertices = 0;
     int numIndices = 0;
     
-    void setup(int numVerts, Vec3 *verts, Vec3 *colors, int numInds, ushort *indices) {
+    void setup(int numVerts, Vec3 *verts, Vec3 *norms, Vec3 *colors, int numInds, ushort *indices) {
         
         if (vao == 0) {
             printf("Mesh setup\n");
             glGenVertexArrays(1, &vao);
             printf("VAO: %u\n", vao);
             
-            glGenBuffers(2, vertexBuffer);
-            printf("VBOs: %u, %u\n", vertexBuffer[0], vertexBuffer[1]);
+            glGenBuffers(3, vertexBuffer);
+            printf("VBOs: %u, %u, %u\n", vertexBuffer[0], vertexBuffer[1], vertexBuffer[2]);
             
             glGenBuffers(1, &indexBuffer);
             printf("IBO: %u\n", indexBuffer);
@@ -48,9 +48,14 @@ struct Mesh {
         glEnableVertexAttribArray(0);
         
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[1]);
-        glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(Vec3), colors, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(Vec3), verts, GL_STATIC_DRAW);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glEnableVertexAttribArray(1);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[2]);
+        glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(Vec3), colors, GL_STATIC_DRAW);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(2);
         
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, numIndices * sizeof(GLushort), indices, GL_STATIC_DRAW);
@@ -61,10 +66,12 @@ struct Mesh {
         
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[0]);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[1]);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[2]);
         glBindBuffer(GL_ARRAY_BUFFER, indexBuffer);
         
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
+        glEnableVertexAttribArray(2);
         
         glDrawElements(GL_TRIANGLE_STRIP, numIndices, GL_UNSIGNED_SHORT, 0);
     }

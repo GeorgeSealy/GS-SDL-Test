@@ -70,7 +70,8 @@ GLuint linkShaders(GLuint vertexShader, GLuint geometryShader, GLuint fragmentSh
     
     // TODO: (George) Handle this in a more re-usable way
     glBindAttribLocation(shaderProgram, 0, "in_Position");
-    glBindAttribLocation(shaderProgram, 1, "in_Color");
+    glBindAttribLocation(shaderProgram, 1, "in_Normal");
+    glBindAttribLocation(shaderProgram, 2, "in_Color");
     
     glLinkProgram(shaderProgram);
     

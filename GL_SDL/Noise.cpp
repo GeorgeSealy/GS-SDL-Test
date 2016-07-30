@@ -6,6 +6,7 @@
 //  Copyright © 2016 MixBit. All rights reserved.
 //
 
+// Implementation from: http://webstaff.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf
 
 //public class ClassicNoise { // Classic Perlin noise in 3D, for comparison
 //    private static int grad3[][] = {{1,1,0},{-1,1,0},{1,-1,0},{-1,-1,0},
@@ -339,6 +340,20 @@ double noise(double xin, double yin, double zin) {
     // Add contributions from each corner to get the final noise value.
     // The result is scaled to stay just inside [-1,1]
     return 32.0*(n0 + n1 + n2 + n3);
+}
+
+void dNoise(double result[3], double xin, double yin, double zin) {
+    const double epsilon = 0.001;
+    
+    result[0] = noise(xin + epsilon, yin, zin) - noise(xin - epsilon, yin, zin);
+    result[1] = noise(xin, yin + epsilon, zin) - noise(xin, yin - epsilon, zin);
+    result[2] = noise(xin, yin, zin + epsilon) - noise(xin, yin, zin - epsilon);
+    
+    double length = sqrt(result[0] * result[0] + result[1] * result[1] + result[2] * result[2]);
+    
+    result[0] /= length;
+    result[1] /= length;
+    result[2] /= length;
 }
 //    // 4D simplex noise
 //    double noise(double x, double y, double z, double w) {
