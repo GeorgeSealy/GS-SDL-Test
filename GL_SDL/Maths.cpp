@@ -19,51 +19,74 @@ double radToDeg(double inRadians) {
 //
 
 
-typedef float Vec3[3];
+union _Vector3
+{
+    struct { float x, y, z; };
+    struct { float r, g, b; };
+    struct { float s, t, p; };
+    float v[3];
+    
+    _Vector3() {}
+    
+    _Vector3(double _x, double _y, double _z) {
+        x = _x; y = _y; z = _z;
+    }
+    
+    _Vector3(float _x, float _y, float _z) {
+        x = _x; y = _y; z = _z;
+    }
+    
+    _Vector3(float _v[3]) {
+        x = _v[0]; y = _v[1]; z = _v[2];
+    }
+    
+    _Vector3(double _v[3]) {
+        x = _v[0]; y = _v[1]; z = _v[2];
+    }
+};
+
+typedef union _Vector3 v3;
+
+inline v3 operator + (v3 a, const v3 &b) {
+    return v3(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+
+inline v3 operator - (v3 a, const v3 &b) {
+    return v3(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+inline v3 operator * (const v3 &a, float s) {
+    return v3(a.x *s, a.y * s, a.z * s);
+}
+
+inline v3 operator * (float s, const v3 &a) {
+    return v3(a.x *s, a.y * s, a.z * s);
+}
+
+inline float v3dot(const v3 &a, const v3 &b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+inline v3 v3cross(const v3 &a, const v3 &b) {
+    return v3(
+              a.y * b.z - b.y * a.z,
+              a.z * b.x - b.z * a.x,
+              a.x * b.y - b.x * a.y
+              );
+}
+
+inline float v3length(const v3 &a) {
+    return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+}
+
+v3 v3normalize(const v3 &a) {
+    
+    float length = v3length(a);
+    
+    return v3(a.x / length, a.y / length, a.z / length);
+}
+
 typedef float Mat4x4[16];
-
-void v3copy(Vec3 a, Vec3 b) {
-    memcpy(a, b, sizeof(Vec3));
-}
-
-void v3add(Vec3 a, Vec3 b) {
-    a[0] += b[0];
-    a[1] += b[1];
-    a[2] += b[2];
-}
-
-void v3sub(Vec3 a, Vec3 b) {
-    a[0] -= b[0];
-    a[1] -= b[1];
-    a[2] -= b[2];
-}
-
-void v3scale(Vec3 a, float scaleFactor) {
-    a[0] *= scaleFactor;
-    a[1] *= scaleFactor;
-    a[2] *= scaleFactor;
-}
-
-float v3dotProduct(Vec3 a, Vec3 b) {
-    
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-
-void v3crossProduct(Vec3 a, Vec3 b, Vec3 &res) {
-    
-    res[0] = a[1] * b[2]  -  b[1] * a[2];
-    res[1] = a[2] * b[0]  -  b[2] * a[0];
-    res[2] = a[0] * b[1]  -  b[0] * a[1];
-}
-
-void v3normalize(Vec3 &a) {
-    
-    float mag = sqrt(a[0] * a[0]  +  a[1] * a[1]  +  a[2] * a[2]);
-    
-    a[0] /= mag;
-    a[1] /= mag;
-    a[2] /= mag;
-}
 
 // ----------------------------------------------------
 // MATRIX STUFF
@@ -140,39 +163,38 @@ void buildProjectionMatrix(Mat4x4 &projMatrix, float fov, float ratio, float nea
 // i.e. a vertical up vector (remmeber gluLookAt?)
 //
 
-void setCamera(Mat4x4 &viewMatrix, Vec3 pos, Vec3 lookAt) {
+void setCamera(Mat4x4 &viewMatrix, v3 pos, v3 lookAt) {
     
-    Vec3 dir, right, up;
+    v3 dir, up(0.0, 0.0, 1.0);
+
+    dir = lookAt - pos;
+//    dir[0] =  (lookAt[0] - pos[0]);
+//    dir[1] =  (lookAt[1] - pos[1]);
+//    dir[2] =  (lookAt[2] - pos[2]);
+    dir = v3normalize(dir);
     
-    up[0] = 0.0f;   up[1] = 0.0f;   up[2] = 1.0f;
+    v3 right = v3cross(dir, up);
+    right = v3normalize(right);
     
-    dir[0] =  (lookAt[0] - pos[0]);
-    dir[1] =  (lookAt[1] - pos[1]);
-    dir[2] =  (lookAt[2] - pos[2]);
-    v3normalize(dir);
-    
-    v3crossProduct(dir,up,right);
-    v3normalize(right);
-    
-    v3crossProduct(right,dir,up);
-    v3normalize(up);
+    up = v3cross(right, dir);
+    up = v3normalize(up);
     
     float aux[16];
     
     //    setIdentityMatrix(viewMatrix, 4);
-    viewMatrix[0]  = right[0];
-    viewMatrix[4]  = right[1];
-    viewMatrix[8]  = right[2];
+    viewMatrix[0]  = right.x;
+    viewMatrix[4]  = right.y;
+    viewMatrix[8]  = right.z;
     viewMatrix[12] = 0.0f;
     
-    viewMatrix[1]  = up[0];
-    viewMatrix[5]  = up[1];
-    viewMatrix[9]  = up[2];
+    viewMatrix[1]  = up.x;
+    viewMatrix[5]  = up.y;
+    viewMatrix[9]  = up.z;
     viewMatrix[13] = 0.0f;
     
-    viewMatrix[2]  = -dir[0];
-    viewMatrix[6]  = -dir[1];
-    viewMatrix[10] = -dir[2];
+    viewMatrix[2]  = -dir.x;
+    viewMatrix[6]  = -dir.y;
+    viewMatrix[10] = -dir.z;
     viewMatrix[14] =  0.0f;
     
     viewMatrix[3]  = 0.0f;
@@ -180,7 +202,7 @@ void setCamera(Mat4x4 &viewMatrix, Vec3 pos, Vec3 lookAt) {
     viewMatrix[11] = 0.0f;
     viewMatrix[15] = 1.0f;
     
-    setTranslationMatrix(aux, -pos[0], -pos[1], -pos[2]);
+    setTranslationMatrix(aux, -pos.x, -pos.y, -pos.z);
     
     multMatrix(viewMatrix, aux);
 }

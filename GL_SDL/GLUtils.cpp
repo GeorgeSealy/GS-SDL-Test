@@ -6,6 +6,25 @@
 //  Copyright © 2016 MixBit. All rights reserved.
 //
 
+#include <assert.h>
+
+#ifdef DEBUG
+
+#define CHECK_GL_ERRORS()                               \
+do {                                                    \
+GLenum error = glGetError();                            \
+if(error != GL_NO_ERROR) {                          \
+printf("OpenGL: %s [error %d]\n", __FUNCTION__, (int)error);					\
+assert(0); \
+} \
+} while(false)
+
+#else
+
+#define CHECK_GL_ERRORS()
+
+#endif
+
 typedef enum {
     ShaderTypeVertex,
     ShaderTypeFragment,
@@ -34,9 +53,12 @@ GLuint compileShader(const char *shaderFilename, ShaderType shaderType) {
         default:
         return 0;
     }
+    CHECK_GL_ERRORS();
     
     glShaderSource(shader, 1, (const GLchar**)&shaderSource, 0);
+    CHECK_GL_ERRORS();
     glCompileShader(shader);
+    CHECK_GL_ERRORS();
     
     free(shaderSource);
     
@@ -65,16 +87,22 @@ GLuint linkShaders(GLuint vertexShader, GLuint geometryShader, GLuint fragmentSh
     
     /* Attach our shaders to our program */
     glAttachShader(shaderProgram, vertexShader);
+    CHECK_GL_ERRORS();
     //    glAttachShader(shaderProgram, geometryShader);
     glAttachShader(shaderProgram, fragmentShader);
+    CHECK_GL_ERRORS();
     
     // TODO: (George) Handle this in a more re-usable way
     glBindAttribLocation(shaderProgram, 0, "in_Position");
+    CHECK_GL_ERRORS();
     glBindAttribLocation(shaderProgram, 1, "in_Normal");
+    CHECK_GL_ERRORS();
     glBindAttribLocation(shaderProgram, 2, "in_Color");
+    CHECK_GL_ERRORS();
     
     glLinkProgram(shaderProgram);
-    
+    CHECK_GL_ERRORS();
+
     int isLinked;
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &isLinked);
     if (isLinked == FALSE) {
