@@ -59,8 +59,8 @@ GLuint shaderProgram = 0;
 inline float normalizedHeightAboveSeaLevel(const v3 &basePt) {
     v3 pt = v3normalize(basePt);
     
-    double n = noise(2.0 * pt.x, 2.0 * pt.y, 2.0 * pt.z);
-    double n2 = noise(5.0 * pt.x, 5.0 * pt.y, 5.0 * pt.z);
+    double n = noise(4.0 * pt.x, 4.0 * pt.y, 4.0 * pt.z);
+    double n2 = noise(7.0 * pt.x, 7.0 * pt.y, 7.0 * pt.z);
     
     float height = n + 0.5 * n2;
     
@@ -98,21 +98,25 @@ Mesh buildGridMesh(int squaresPerSide, v3 startPt, v3 acrossDir, v3 upDir) {
             
             float height = normalizedHeightAboveSeaLevel(pt);
             
-            double multiplier = 0.25;
+            height += 0.1;
+            
+            double multiplier = 0.125;
             float distFromCentre = planetRadius * (1.0 + height * multiplier);
             
-            pt = distFromCentre * pt;
+            if (height < 0.0) {
+                distFromCentre = planetRadius;
+            }
             
-            height += 0.25;
+            pt = distFromCentre * pt;
             
             if (height < 0.0) {
                 cols[vertIndex].r = 0.2;
                 cols[vertIndex].g = 0.2 - height * 0.5;
                 cols[vertIndex].b = 1.0;
-            } else if (height < 1.0) {
-                cols[vertIndex].r = 0.4 + 0.4 * height;
-                cols[vertIndex].g = 0.8;
-                cols[vertIndex].b = 0.2 + 0.6 * height;
+            } else if (height < 0.8) {
+                cols[vertIndex].r = 0.2 + 0.4 * height;
+                cols[vertIndex].g = 0.5;
+                cols[vertIndex].b = 0.1 + 0.4 * height;
             } else {
                 cols[vertIndex].r = 0.9;
                 cols[vertIndex].g = 0.9;
@@ -171,7 +175,7 @@ Mesh negZMesh;
 
 void setupGL() {
     
-    int numSquaresPerSide = 64;
+    int numSquaresPerSide = 128;
     
     v3 startPt(1.0, -1.0, -1.0);
     v3 across(0.0, 2.0, 0.0);
@@ -262,6 +266,80 @@ struct PointOfView {
     v3 position;
     v3 direction, right, up;
     
+    v3 rotatePointAboutLine(v3 p, double theta, v3 p1, v3 p2)
+    {
+        v3 u,q1,q2;
+        double d;
+        
+        /* Step 1 */
+        q1.x = p.x - p1.x;
+        q1.y = p.y - p1.y;
+        q1.z = p.z - p1.z;
+        
+        u.x = p2.x - p1.x;
+        u.y = p2.y - p1.y;
+        u.z = p2.z - p1.z;
+        
+        u = v3normalize(u);
+//        Normalise(&u);
+        d = sqrt(u.y*u.y + u.z*u.z);
+        
+        /* Step 2 */
+        if (d != 0) {
+            q2.x = q1.x;
+            q2.y = q1.y * u.z / d - q1.z * u.y / d;
+            q2.z = q1.y * u.y / d + q1.z * u.z / d;
+        } else {
+            q2 = q1;
+        }
+        
+        /* Step 3 */
+        q1.x = q2.x * d - q2.z * u.x;
+        q1.y = q2.y;
+        q1.z = q2.x * u.x + q2.z * d;
+        
+        /* Step 4 */
+        q2.x = q1.x * cos(theta) - q1.y * sin(theta);
+        q2.y = q1.x * sin(theta) + q1.y * cos(theta);
+        q2.z = q1.z;
+        
+        /* Inverse of step 3 */
+        q1.x =   q2.x * d + q2.z * u.x;
+        q1.y =   q2.y;
+        q1.z = - q2.x * u.x + q2.z * d;
+        
+        /* Inverse of step 2 */
+        if (d != 0) {
+            q2.x =   q1.x;
+            q2.y =   q1.y * u.z / d + q1.z * u.y / d;
+            q2.z = - q1.y * u.y / d + q1.z * u.z / d;
+        } else {
+            q2 = q1;
+        }
+        
+        /* Inverse of step 1 */
+        q1.x = q2.x + p1.x;
+        q1.y = q2.y + p1.y;
+        q1.z = q2.z + p1.z;
+        return(q1);
+    }
+    
+    void roll(double angle) {
+        direction = v3normalize(direction);
+        v3 newUp = rotatePointAboutLine(up, angle, v3(0.0, 0.0, 0.0), direction);
+        
+        updateForUpVector(newUp);
+    }
+    
+    void pitch(double angle) {
+        right = v3normalize(right);
+        
+        direction = rotatePointAboutLine(direction, angle, v3(0.0, 0.0, 0.0), right);
+        v3 newUp = v3cross(right, direction);
+        
+        updateForUpVector(newUp);
+    }
+    
     void updateForUpVector(v3 referenceUp) {
         direction = v3normalize(direction);
         
@@ -302,9 +380,27 @@ struct PointOfView {
     }
 };
 
-void runMainLoop(SDL_Window *window) {
+struct InputState {
+    InputState() {
+        forwardActive = false;
+        backActive = false;
+        leftActive = false;
+        rightActive = false;
+        upActive = false;
+        downActive = false;
+        shouldQuit = false;
+    }
     
-    bool quit = false;
+    bool forwardActive;
+    bool backActive;
+    bool leftActive;
+    bool rightActive;
+    bool upActive;
+    bool downActive;
+    bool shouldQuit;
+};
+
+void runMainLoop(SDL_Window *window) {
     
     setupGL();
     
@@ -314,21 +410,101 @@ void runMainLoop(SDL_Window *window) {
     double currentTime = timer.seconds();
     double accumulator = 0.0;
     
-    double r = 0.0;
-    double angle = 0.0;
+    double rollAcceleration = 0.5;
+    double rollVelocity = 0.0;
+    double rollMultiplier = 0.3;
+    
+    double pitchAcceleration = 0.5;
+    double pitchVelocity = 0.0;
+    double pitchMultiplier = 0.3;
 
     PointOfView view;
+    
+    v3 from(5.0, 0.0, 0.2);
+    v3 dir(-from.x, -from.y, -from.z);
+    v3 up(0.0, 0.0, 1.0);
+    
+    from = planetRadius * from;
+    view.position = from;
+    view.direction = dir;
+    view.updateForUpVector(up);
+
+    SDL_Event event;
+    InputState inputs;
     
     // Basic run loop from http://gafferongames.com/game-physics/fix-your-timestep/
     // TODO: (George) Final interpolation between states for super smoothness
     
-    while (!quit)
+    while (!inputs.shouldQuit)
     {
         double newTime = timer.seconds();
         double frameTime = newTime - currentTime;
         currentTime = newTime;
         
         // GATHER USER INPUT (PLUS NETWORK INPUT?) - START
+        
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+                case SDL_KEYDOWN:
+                    switch( event.key.keysym.sym ) {
+                        case SDLK_ESCAPE:
+                            inputs.shouldQuit = true;
+                            break;
+                        case SDLK_w:
+                            inputs.upActive = true;
+                            break;
+                        case SDLK_s:
+                            inputs.downActive = true;
+                            break;
+                        case SDLK_a:
+                            inputs.leftActive = true;
+                            break;
+                        case SDLK_d:
+                            inputs.rightActive = true;
+                            break;
+                        case SDLK_UP:
+                            inputs.forwardActive = true;
+                            break;
+                        case SDLK_DOWN:
+                            inputs.backActive = true;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                    
+                case SDL_KEYUP:
+                    /* Check the SDLKey values and move change the coords */
+                    switch( event.key.keysym.sym ) {
+                        case SDLK_w:
+                            inputs.upActive = false;
+                            break;
+                        case SDLK_s:
+                            inputs.downActive = false;
+                            break;
+                        case SDLK_a:
+                            inputs.leftActive = false;
+                            break;
+                        case SDLK_d:
+                            inputs.rightActive = false;
+                            break;
+                        case SDLK_UP:
+                            inputs.forwardActive = false;
+                            break;
+                        case SDLK_DOWN:
+                            inputs.backActive = false;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+
+        
         // GATHER USER INPUT (PLUS NETWORK INPUT?) - END
         
         accumulator += frameTime;
@@ -338,14 +514,49 @@ void runMainLoop(SDL_Window *window) {
             
             // GAME STATE UPDATE - START
             //            integrate( state, t, dt );
-            r += dt;
             
-            if (r > 0.4) {
-                r = 0.0;
+            if (inputs.leftActive) {
+                rollVelocity -= rollAcceleration * dt;
             }
             
+            if (inputs.rightActive) {
+                rollVelocity += rollAcceleration * dt;
+            }
             
-            angle += dt * 10.0;
+            if (!inputs.leftActive && !inputs.rightActive) {
+                rollVelocity *= 0.95;
+                
+                if (fabs(rollVelocity) < 0.05) {
+                    rollVelocity = 0.0;
+                }
+            }
+            
+            if (rollVelocity < -1.0) {
+                rollVelocity = -1.0;
+            } else if (rollVelocity > 1.0) {
+                rollVelocity = 1.0;
+            }
+            
+            if (inputs.upActive) {
+                pitchVelocity -= pitchAcceleration * dt;
+            }
+            
+            if (inputs.downActive) {
+                pitchVelocity += pitchAcceleration * dt;
+            }
+            
+            if (!inputs.upActive && !inputs.downActive) {
+                pitchVelocity *= 0.95;
+            }
+            
+            if (pitchVelocity < -1.0) {
+                pitchVelocity = -1.0;
+            } else if (pitchVelocity > 1.0) {
+                pitchVelocity = 1.0;
+            }
+            
+            view.roll(rollVelocity * rollMultiplier);
+            view.pitch(pitchVelocity * pitchMultiplier);
             
             // GAME STATE UPDATE - END
             
@@ -369,34 +580,20 @@ void runMainLoop(SDL_Window *window) {
         
         buildProjectionMatrix(projectionMatrix, 45.0, 4.0 / 3.0, 10.0, 50000.0);
         
-        double radAngle = degToRad(angle);
-        double cs = cos(radAngle);
-        double sn = sin(radAngle);
-        v3 from(5.05 * cs, 5.05 * sn, 0.2);
-        v3 dir(-from.x, -from.y, -from.z);
-        v3 up(0.0, 0.0, 1.0);
-//        Vec3 from = {4.05f * cs, 4.05f * sn, 0.2};
-//        Vec3 dir = {-from[1] - 1.4f * from[0], from[0] - 1.4f * from[1], 0.0};
-//        Vec3 from = {4.05f * cs, 4.05f * sn, 0.2};
-//        Vec3 dir = {-from[1] - 0.4f * from[0], from[0] - 0.4f * from[1], 0.4f *  from[2]};
-//        Vec3 from = {2.5, 2.5, 0.2};
-        
-        from = planetRadius * from;
-        dir = planetRadius * dir;
-//        from[0] *= planetRadius;
-//        from[1] *= planetRadius;
-//        from[2] *= planetRadius;
-        
-//        dir[0] *= planetRadius;
-//        dir[1] *= planetRadius;
-//        dir[2] *= planetRadius;
-
-        view.position = from;
-        view.direction = dir;
-//        view.setPosition(from);
-//        view.setDirection(dir);
-//        view.updateForUpVector(from);
-        view.updateForUpVector(up);
+//        double radAngle = degToRad(angle);
+//        double cs = cos(radAngle);
+//        double sn = sin(radAngle);
+//        v3 from(5.05 * cs, 5.05 * sn, 0.2);
+//        v3 dir(-from.x, -from.y, -from.z);
+//        v3 up(0.0, 0.0, 1.0);
+//        
+//        from = planetRadius * from;
+//        dir = planetRadius * dir;
+//
+//        view.position = from;
+//        view.direction = dir;
+//
+//        view.updateForUpVector(up);
         
         view.getCameraMatrix(viewMatrix);
         

@@ -41,11 +41,6 @@ struct Mesh {
 //            printf("  (%1.2f, %1.2f, %1.2f)\n", verts[i].x, verts[i].y, verts[i].z);
 //        }
         
-//                printf("Indices:\n");
-//                for (int i = 0; i < numIndices; ++i) {
-//                    printf("  (%u)\n", indices[i]);
-//                }
-        
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[0]);
         glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(v3), verts, GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
