@@ -45,7 +45,33 @@ union _Vector3
     }
 };
 
+union _Vector4
+{
+    struct { float x, y, z, w; };
+    struct { float r, g, b, a; };
+    float v[4];
+    
+    _Vector4() {}
+    
+    _Vector4(double _x, double _y, double _z, double _a) {
+        x = _x; y = _y; z = _z; a = _a;
+    }
+    
+    _Vector4(float _x, float _y, float _z, float _a) {
+        x = _x; y = _y; z = _z; a = _a;
+    }
+    
+    _Vector4(float _v[4]) {
+        x = _v[0]; y = _v[1]; z = _v[2]; a = _v[3];
+    }
+    
+    _Vector4(double _v[4]) {
+        x = _v[0]; y = _v[1]; z = _v[2]; a = _v[3];
+    }
+};
+
 typedef union _Vector3 v3;
+typedef union _Vector4 v4;
 
 inline v3 operator + (v3 a, const v3 &b) {
     return v3(a.x + b.x, a.y + b.y, a.z + b.z);

@@ -78,7 +78,7 @@ Mesh buildGridMesh(int squaresPerSide, v3 startPt, v3 acrossDir, v3 upDir) {
 
     v3 *verts = (v3 *)malloc(sizeof(v3) * numVerts);
     v3 *norms = (v3 *)malloc(sizeof(v3) * numVerts);
-    v3 *cols = (v3 *)malloc(sizeof(v3) * numVerts);
+    v4 *cols = (v4 *)malloc(sizeof(v4) * numVerts);
 
     int vertIndex = 0;
     for (int j = 0; j <= squaresPerSide; ++j) {
@@ -122,6 +122,7 @@ Mesh buildGridMesh(int squaresPerSide, v3 startPt, v3 acrossDir, v3 upDir) {
                 cols[vertIndex].g = 0.9;
                 cols[vertIndex].b = 0.9;
             }
+            cols[vertIndex].a = 1.0;
             
             vertIndex += 1;
         }
@@ -166,49 +167,132 @@ Mesh buildGridMesh(int squaresPerSide, v3 startPt, v3 acrossDir, v3 upDir) {
     return result;
 }
 
-Mesh posXMesh;
-Mesh negXMesh;
-Mesh posYMesh;
-Mesh negYMesh;
-Mesh posZMesh;
-Mesh negZMesh;
+Mesh buildAtmosphereMesh(int squaresPerSide, v3 startPt, v3 acrossDir, v3 upDir) {
+    
+    float scaleFactor = 1.0 / squaresPerSide;
+    
+    v3 uStep = scaleFactor * acrossDir;
+    v3 vStep = scaleFactor * upDir;
+    
+    int numVerts = (squaresPerSide + 1) * (squaresPerSide + 1);
+    
+    v3 *verts = (v3 *)malloc(sizeof(v3) * numVerts);
+    v3 *norms = (v3 *)malloc(sizeof(v3) * numVerts);
+    v4 *cols = (v4 *)malloc(sizeof(v4) * numVerts);
+    
+    int vertIndex = 0;
+    for (int j = 0; j <= squaresPerSide; ++j) {
+        
+        for (int i = 0; i <= squaresPerSide; ++i) {
+            
+            v3 &pt = verts[vertIndex];
+            
+            v3 u = i * uStep;
+            v3 v = j * vStep;
+            
+            pt = startPt + u + v;
+            
+            //            // TODO: (George) Move the normalisation / height code out of here into a separate function
+            //            // TODO: (George) Will require an "update mesh" function and stored arrays in mesh struct
+            pt = v3normalize(pt);
+            
+            float height = 5.0;
+            
+            double multiplier = 0.025;
+            float distFromCentre = planetRadius * (1.0 + height * multiplier);
+            
+            pt = distFromCentre * pt;
+            cols[vertIndex].r = 0.7;
+            cols[vertIndex].g = 0.75;
+            cols[vertIndex].b = 0.9;
+            cols[vertIndex].a = 0.3;
+            
+            vertIndex += 1;
+        }
+    }
+    
+    int numIndices = (2 * (squaresPerSide + 1)) * squaresPerSide;
+    ushort *indices = (ushort *)malloc(sizeof(ushort) * numIndices);
+    
+    int index = 0;
+    
+    for (int j = 0; j < squaresPerSide; ++j) {
+        for (int i = 0; i <= squaresPerSide; ++i) {
+            
+            if ((j % 2) == 0) {
+                
+                ushort baseIndex = j * (squaresPerSide + 1) + i;
+                
+                indices[index + 0] = baseIndex;
+                indices[index + 1] = baseIndex + (squaresPerSide + 1);
+                
+            } else {
+                
+                ushort baseIndex = j * (squaresPerSide + 1) + (squaresPerSide - i);
+                
+                indices[index + 0] = baseIndex + (squaresPerSide + 1);
+                indices[index + 1] = baseIndex;
+                
+            }
+            
+            index += 2;
+        }
+    }
+    
+    Mesh result;
+    
+    result.setup(numVerts, verts, norms, cols, numIndices, indices);
+    
+    free(verts);
+    free(cols);
+    free(indices);
+    
+    return result;
+}
+
+struct Model {
+    static const int maxMeshes = 64;
+    
+    int numMeshes;
+    Mesh meshes[maxMeshes];
+    
+    void render() {
+        for (int i = 0; i < numMeshes; ++i) {
+            meshes[i].draw();
+        }
+    }
+};
+
+Model planet;
+Model atmosphere;
 
 void setupGL() {
     
     int numSquaresPerSide = 128;
     
-    v3 startPt(1.0, -1.0, -1.0);
-    v3 across(0.0, 2.0, 0.0);
-    v3 up(0.0, 0.0, 2.0);
+    planet.numMeshes = 6;
+//    planet.meshes[0] = buildGridMesh(numSquaresPerSide, v3(1.0, -1.0, -1.0), v3(0.0, 2.0, 0.0), v3(0.0, 0.0, 2.0));
+//    planet.meshes[1] = buildGridMesh(numSquaresPerSide, v3(-1.0, 1.0, -1.0), v3(0.0, -2.0, 0.0), v3(0.0, 0.0, 2.0));
+//    planet.meshes[2] = buildGridMesh(numSquaresPerSide, v3(1.0, 1.0, -1.0), v3(-2.0, 0.0, 0.0), v3(0.0, 0.0, 2.0));
+//    planet.meshes[3] = buildGridMesh(numSquaresPerSide, v3(-1.0, -1.0, -1.0), v3(2.0, 0.0, 0.0), v3(0.0, 0.0, 2.0));
+//    planet.meshes[4] = buildGridMesh(numSquaresPerSide, v3(-1.0, -1.0, 1.0), v3(2.0, 0.0, 0.0), v3(0.0, 2.0, 0.0));
+//    planet.meshes[5] = buildGridMesh(numSquaresPerSide, v3(-1.0, -1.0, -1.0), v3(2.0, 0.0, 0.0), v3(0.0, 2.0, 0.0));
+
+    planet.meshes[0] = buildGridMesh(numSquaresPerSide, v3(1.0, -1.0, 1.0), v3(0.0, 2.0, 0.0), v3(0.0, 0.0, -2.0));
+    planet.meshes[1] = buildGridMesh(numSquaresPerSide, v3(-1.0, 1.0, 1.0), v3(0.0, -2.0, 0.0), v3(0.0, 0.0, -2.0));
+    planet.meshes[2] = buildGridMesh(numSquaresPerSide, v3(1.0, 1.0, 1.0), v3(-2.0, 0.0, 0.0), v3(0.0, 0.0, -2.0));
+    planet.meshes[3] = buildGridMesh(numSquaresPerSide, v3(-1.0, -1.0, 1.0), v3(2.0, 0.0, 0.0), v3(0.0, 0.0, -2.0));
+    planet.meshes[4] = buildGridMesh(numSquaresPerSide, v3(-1.0, 1.0, 1.0), v3(2.0, 0.0, 0.0), v3(0.0, -2.0, 0.0));
+    planet.meshes[5] = buildGridMesh(numSquaresPerSide, v3(-1.0, -1.0, -1.0), v3(2.0, 0.0, 0.0), v3(0.0, 2.0, 0.0));
     
-    posXMesh = buildGridMesh(numSquaresPerSide, startPt, across, up);
-    
-    startPt = v3(-1.0, 1.0, -1.0);
-    across = v3(0.0, -2.0, 0.0);
-    
-    negXMesh = buildGridMesh(numSquaresPerSide, startPt, across, up);
-    
-    startPt = v3(1.0, 1.0, -1.0);
-    across = v3(-2.0, 0.0, 0.0);
-    
-    posYMesh = buildGridMesh(numSquaresPerSide, startPt, across, up);
-    
-    startPt = v3(-1.0, -1.0, -1.0);
-    across = v3(2.0, 0.0, 0.0);
-    
-    negYMesh = buildGridMesh(numSquaresPerSide, startPt, across, up);
-    
-    startPt = v3(-1.0, -1.0, 1.0);
-    across = v3(2.0, 0.0, 0.0);
-    up = v3(0.0, 2.0, 0.0);
-    
-    posZMesh = buildGridMesh(numSquaresPerSide, startPt, across, up);
-    
-    startPt = v3(-1.0, -1.0, -1.0);
-    across = v3(2.0, 0.0, 0.0);
-//    up[0] = 0.0; up[1] = -2.0; up[2] = 0.0;
-    
-    negZMesh = buildGridMesh(numSquaresPerSide, startPt, across, up);
+    numSquaresPerSide = 64;
+    atmosphere.numMeshes = 6;
+    atmosphere.meshes[0] = buildAtmosphereMesh(numSquaresPerSide, v3(1.0, -1.0, 1.0), v3(0.0, 2.0, 0.0), v3(0.0, 0.0, -2.0));
+    atmosphere.meshes[1] = buildAtmosphereMesh(numSquaresPerSide, v3(-1.0, 1.0, 1.0), v3(0.0, -2.0, 0.0), v3(0.0, 0.0, -2.0));
+    atmosphere.meshes[2] = buildAtmosphereMesh(numSquaresPerSide, v3(1.0, 1.0, 1.0), v3(-2.0, 0.0, 0.0), v3(0.0, 0.0, -2.0));
+    atmosphere.meshes[3] = buildAtmosphereMesh(numSquaresPerSide, v3(-1.0, -1.0, 1.0), v3(2.0, 0.0, 0.0), v3(0.0, 0.0, -2.0));
+    atmosphere.meshes[4] = buildAtmosphereMesh(numSquaresPerSide, v3(-1.0, 1.0, 1.0), v3(2.0, 0.0, 0.0), v3(0.0, -2.0, 0.0));
+    atmosphere.meshes[5] = buildAtmosphereMesh(numSquaresPerSide, v3(-1.0, -1.0, -1.0), v3(2.0, 0.0, 0.0), v3(0.0, 2.0, 0.0));
 
 
     vertexShader = compileShader("Assets/Shaders/SimpleCameraVertex.glsl", ShaderTypeVertex);
@@ -715,12 +799,22 @@ void runMainLoop(SDL_Window *window) {
         glUseProgram(shaderProgram);
         CHECK_GL_ERRORS();
 
-        posXMesh.draw();
-        negXMesh.draw();
-        posYMesh.draw();
-        negYMesh.draw();
-        posZMesh.draw();
-        negZMesh.draw();
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+        planet.render();
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        
+        glCullFace(GL_FRONT);
+        atmosphere.render();
+        
+        // TODO: (George) Only if we're outside the atmosphere...
+        glCullFace(GL_BACK);
+        atmosphere.render();
         
         SDL_GL_SwapWindow(window);
         CHECK_GL_ERRORS();

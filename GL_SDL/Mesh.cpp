@@ -13,7 +13,7 @@ struct Mesh {
     int numVertices = 0;
     int numIndices = 0;
     
-    void setup(int numVerts, v3 *verts, v3 *norms, v3 *colors, int numInds, ushort *indices) {
+    void setup(int numVerts, v3 *verts, v3 *norms, v4 *colors, int numInds, ushort *indices) {
         
         if (vao == 0) {
             printf("Mesh setup\n");
@@ -54,8 +54,8 @@ struct Mesh {
         CHECK_GL_ERRORS();
         
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer[2]);
-        glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(v3), colors, GL_STATIC_DRAW);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(v4), colors, GL_STATIC_DRAW);
+        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, 0);
         glEnableVertexAttribArray(2);
         CHECK_GL_ERRORS();
         
