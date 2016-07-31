@@ -420,6 +420,221 @@ struct InputState {
     bool shouldQuit;
 };
 
+InputState updateInputs(InputState &inputs) {
+    SDL_Event event;
+
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_QUIT:
+                inputs.shouldQuit = true;
+                break;
+                
+            case SDL_KEYDOWN:
+                switch( event.key.keysym.sym ) {
+                    case SDLK_ESCAPE:
+                        inputs.shouldQuit = true;
+                        break;
+                    case SDLK_w:
+                        inputs.upActive = true;
+                        break;
+                    case SDLK_s:
+                        inputs.downActive = true;
+                        break;
+                    case SDLK_a:
+                        inputs.leftActive = true;
+                        break;
+                    case SDLK_d:
+                        inputs.rightActive = true;
+                        break;
+                    case SDLK_UP:
+                        inputs.forwardActive = true;
+                        break;
+                    case SDLK_DOWN:
+                        inputs.backActive = true;
+                        break;
+                    case SDLK_LEFT:
+                        inputs.yawLeftActive = true;
+                        break;
+                    case SDLK_RIGHT:
+                        inputs.yawRightActive = true;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+                
+            case SDL_KEYUP:
+                /* Check the SDLKey values and move change the coords */
+                switch( event.key.keysym.sym ) {
+                    case SDLK_w:
+                        inputs.upActive = false;
+                        break;
+                    case SDLK_s:
+                        inputs.downActive = false;
+                        break;
+                    case SDLK_a:
+                        inputs.leftActive = false;
+                        break;
+                    case SDLK_d:
+                        inputs.rightActive = false;
+                        break;
+                    case SDLK_UP:
+                        inputs.forwardActive = false;
+                        break;
+                    case SDLK_DOWN:
+                        inputs.backActive = false;
+                        break;
+                    case SDLK_LEFT:
+                        inputs.yawLeftActive = false;
+                        break;
+                    case SDLK_RIGHT:
+                        inputs.yawRightActive = false;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+                
+            default:
+                break;
+        }
+    }
+    
+    return inputs;
+}
+
+struct Ship {
+    double rollAcceleration;
+    double rollVelocity;
+    double rollMultiplier;
+    
+    double pitchAcceleration;
+    double pitchVelocity;
+    double pitchMultiplier;
+    
+    double yawAcceleration;
+    double yawVelocity;
+    double yawMultiplier;
+    
+    double acceleration;
+    double velocity;
+    double velocityMultiplier;
+    
+    PointOfView view;
+    
+    Ship(const PointOfView &_view) {
+        
+        view = _view;
+        
+        rollAcceleration = 0.5;
+        rollVelocity = 0.0;
+        rollMultiplier = 0.3;
+        
+        pitchAcceleration = 0.1;
+        pitchVelocity = 0.0;
+        pitchMultiplier = 0.2;
+        
+        yawAcceleration = 0.1;
+        yawVelocity = 0.0;
+        yawMultiplier = 0.2;
+        
+        acceleration = 0.1;
+        velocity = 0.0;
+        velocityMultiplier = 1000.0;
+    }
+    
+    void moveShip(const InputState &inputs, double dt, v3 planetPos, double planetRad) {
+        
+        if (inputs.leftActive) {
+            rollVelocity -= rollAcceleration * dt;
+        }
+        
+        if (inputs.rightActive) {
+            rollVelocity += rollAcceleration * dt;
+        }
+        
+        if (!inputs.leftActive && !inputs.rightActive) {
+            rollVelocity *= 0.95;
+            
+            if (fabs(rollVelocity) < 0.05) {
+                rollVelocity = 0.0;
+            }
+        }
+        
+        if (rollVelocity < -1.0) {
+            rollVelocity = -1.0;
+        } else if (rollVelocity > 1.0) {
+            rollVelocity = 1.0;
+        }
+        
+        if (inputs.upActive) {
+            pitchVelocity -= pitchAcceleration * dt;
+        }
+        
+        if (inputs.downActive) {
+            pitchVelocity += pitchAcceleration * dt;
+        }
+        
+        if (!inputs.upActive && !inputs.downActive) {
+            pitchVelocity *= 0.9;
+        }
+        
+        if (pitchVelocity < -1.0) {
+            pitchVelocity = -1.0;
+        } else if (pitchVelocity > 1.0) {
+            pitchVelocity = 1.0;
+        }
+        
+        if (inputs.yawLeftActive) {
+            yawVelocity += yawAcceleration * dt;
+        }
+        
+        if (inputs.yawRightActive) {
+            yawVelocity -= yawAcceleration * dt;
+        }
+        
+        if (!inputs.yawLeftActive && !inputs.yawRightActive) {
+            yawVelocity *= 0.9;
+        }
+        
+        if (yawVelocity < -1.0) {
+            yawVelocity = -1.0;
+        } else if (yawVelocity > 1.0) {
+            yawVelocity = 1.0;
+        }
+        
+        if (inputs.forwardActive) {
+            velocity += acceleration * dt;
+        }
+        
+        if (inputs.backActive) {
+            velocity -= acceleration * dt;
+        }
+        
+        if (!inputs.forwardActive && !inputs.backActive) {
+            velocity *= 0.95;
+        }
+        
+        if (velocity < -1.0) {
+            velocity = -1.0;
+        } else if (velocity > 1.0) {
+            velocity = 1.0;
+        }
+        
+        view.roll(rollVelocity * rollMultiplier);
+        view.pitch(pitchVelocity * pitchMultiplier);
+        view.yaw(yawVelocity * yawMultiplier);
+        
+        velocityMultiplier = v3length(view.position - planetPos) - planetRad;
+        
+        if (velocityMultiplier < 10.0) {
+            velocityMultiplier = 10.0;
+        }
+        
+        view.move(velocity * dt * velocityMultiplier);
+    }
+};
+
 void runMainLoop(SDL_Window *window) {
     
     setupGL();
@@ -429,23 +644,7 @@ void runMainLoop(SDL_Window *window) {
     
     double currentTime = timer.seconds();
     double accumulator = 0.0;
-    
-    double rollAcceleration = 0.5;
-    double rollVelocity = 0.0;
-    double rollMultiplier = 0.3;
-    
-    double pitchAcceleration = 0.1;
-    double pitchVelocity = 0.0;
-    double pitchMultiplier = 0.2;
-    
-    double yawAcceleration = 0.1;
-    double yawVelocity = 0.0;
-    double yawMultiplier = 0.2;
 
-    double acceleration = 0.1;
-    double velocity = 0.0;
-    double velocityMultiplier = 1000.0;
-    
     PointOfView view;
     
     v3 from(5.0, 0.0, 0.2);
@@ -457,7 +656,8 @@ void runMainLoop(SDL_Window *window) {
     view.direction = dir;
     view.updateForUpVector(up);
 
-    SDL_Event event;
+    Ship ship(view);
+    
     InputState inputs;
     
     // Basic run loop from http://gafferongames.com/game-physics/fix-your-timestep/
@@ -470,84 +670,7 @@ void runMainLoop(SDL_Window *window) {
         currentTime = newTime;
         
         // GATHER USER INPUT (PLUS NETWORK INPUT?) - START
-        
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-                case SDL_QUIT:
-                    inputs.shouldQuit = true;
-                    break;
-                    
-                case SDL_KEYDOWN:
-                    switch( event.key.keysym.sym ) {
-                        case SDLK_ESCAPE:
-                            inputs.shouldQuit = true;
-                            break;
-                        case SDLK_w:
-                            inputs.upActive = true;
-                            break;
-                        case SDLK_s:
-                            inputs.downActive = true;
-                            break;
-                        case SDLK_a:
-                            inputs.leftActive = true;
-                            break;
-                        case SDLK_d:
-                            inputs.rightActive = true;
-                            break;
-                        case SDLK_UP:
-                            inputs.forwardActive = true;
-                            break;
-                        case SDLK_DOWN:
-                            inputs.backActive = true;
-                            break;
-                        case SDLK_LEFT:
-                            inputs.yawLeftActive = true;
-                            break;
-                        case SDLK_RIGHT:
-                            inputs.yawRightActive = true;
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                    
-                case SDL_KEYUP:
-                    /* Check the SDLKey values and move change the coords */
-                    switch( event.key.keysym.sym ) {
-                        case SDLK_w:
-                            inputs.upActive = false;
-                            break;
-                        case SDLK_s:
-                            inputs.downActive = false;
-                            break;
-                        case SDLK_a:
-                            inputs.leftActive = false;
-                            break;
-                        case SDLK_d:
-                            inputs.rightActive = false;
-                            break;
-                        case SDLK_UP:
-                            inputs.forwardActive = false;
-                            break;
-                        case SDLK_DOWN:
-                            inputs.backActive = false;
-                            break;
-                        case SDLK_LEFT:
-                            inputs.yawLeftActive = false;
-                            break;
-                        case SDLK_RIGHT:
-                            inputs.yawRightActive = false;
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                    
-                default:
-                    break;
-            }
-        }
-
+        inputs = updateInputs(inputs);
         
         // GATHER USER INPUT (PLUS NETWORK INPUT?) - END
         
@@ -559,93 +682,7 @@ void runMainLoop(SDL_Window *window) {
             // GAME STATE UPDATE - START
             //            integrate( state, t, dt );
             
-            if (inputs.leftActive) {
-                rollVelocity -= rollAcceleration * dt;
-            }
-            
-            if (inputs.rightActive) {
-                rollVelocity += rollAcceleration * dt;
-            }
-            
-            if (!inputs.leftActive && !inputs.rightActive) {
-                rollVelocity *= 0.95;
-                
-                if (fabs(rollVelocity) < 0.05) {
-                    rollVelocity = 0.0;
-                }
-            }
-            
-            if (rollVelocity < -1.0) {
-                rollVelocity = -1.0;
-            } else if (rollVelocity > 1.0) {
-                rollVelocity = 1.0;
-            }
-            
-            if (inputs.upActive) {
-                pitchVelocity -= pitchAcceleration * dt;
-            }
-            
-            if (inputs.downActive) {
-                pitchVelocity += pitchAcceleration * dt;
-            }
-            
-            if (!inputs.upActive && !inputs.downActive) {
-                pitchVelocity *= 0.9;
-            }
-            
-            if (pitchVelocity < -1.0) {
-                pitchVelocity = -1.0;
-            } else if (pitchVelocity > 1.0) {
-                pitchVelocity = 1.0;
-            }
-            
-            if (inputs.yawLeftActive) {
-                yawVelocity += yawAcceleration * dt;
-            }
-            
-            if (inputs.yawRightActive) {
-                yawVelocity -= yawAcceleration * dt;
-            }
-            
-            if (!inputs.yawLeftActive && !inputs.yawRightActive) {
-                yawVelocity *= 0.9;
-            }
-            
-            if (yawVelocity < -1.0) {
-                yawVelocity = -1.0;
-            } else if (yawVelocity > 1.0) {
-                yawVelocity = 1.0;
-            }
-            
-            if (inputs.forwardActive) {
-                velocity += acceleration * dt;
-            }
-            
-            if (inputs.backActive) {
-                velocity -= acceleration * dt;
-            }
-            
-            if (!inputs.forwardActive && !inputs.backActive) {
-                velocity *= 0.95;
-            }
-            
-            if (velocity < -1.0) {
-                velocity = -1.0;
-            } else if (velocity > 1.0) {
-                velocity = 1.0;
-            }
-            
-            view.roll(rollVelocity * rollMultiplier);
-            view.pitch(pitchVelocity * pitchMultiplier);
-            view.yaw(yawVelocity * yawMultiplier);
-            
-            velocityMultiplier = v3length(view.position) - planetRadius;
-            
-            if (velocityMultiplier < 10.0) {
-                velocityMultiplier = 10.0;
-            }
-            
-            view.move(velocity * dt * velocityMultiplier);
+            ship.moveShip(inputs, dt, v3(0.0, 0.0, 0.0), planetRadius);
             
             // GAME STATE UPDATE - END
             
@@ -656,7 +693,6 @@ void runMainLoop(SDL_Window *window) {
         // GAME STATE RENDER - START
 
         
-//        render( state );
         glClearColor ( 0.05, 0.0, 0.1, 1.0 );
         glClear ( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         
@@ -669,22 +705,7 @@ void runMainLoop(SDL_Window *window) {
         
         buildProjectionMatrix(projectionMatrix, 45.0, 4.0 / 3.0, 10.0, 50000.0);
         
-//        double radAngle = degToRad(angle);
-//        double cs = cos(radAngle);
-//        double sn = sin(radAngle);
-//        v3 from(5.05 * cs, 5.05 * sn, 0.2);
-//        v3 dir(-from.x, -from.y, -from.z);
-//        v3 up(0.0, 0.0, 1.0);
-//        
-//        from = planetRadius * from;
-//        dir = planetRadius * dir;
-//
-//        view.position = from;
-//        view.direction = dir;
-//
-//        view.updateForUpVector(up);
-        
-        view.getCameraMatrix(viewMatrix);
+        ship.view.getCameraMatrix(viewMatrix);
         
         multMatrix(projectionMatrix, viewMatrix);
         

@@ -1,5 +1,12 @@
 # Things To Do
 
+- Stars
+- Rings!
+- Sun
+- Moon(s)
+- Other planets?
+- Asteroids / Comets
+- Mouse look
 - Helper Odd/Even function
 - Likewise rework matrix?
 - Normal (and UV?) info
