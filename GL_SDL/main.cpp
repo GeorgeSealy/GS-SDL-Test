@@ -100,7 +100,7 @@ Mesh buildGridMesh(int squaresPerSide, v3 startPt, v3 acrossDir, v3 upDir) {
             
             height += 0.1;
             
-            double multiplier = 0.125;
+            double multiplier = 0.025;
             float distFromCentre = planetRadius * (1.0 + height * multiplier);
             
             if (height < 0.0) {
@@ -340,6 +340,22 @@ struct PointOfView {
         updateForUpVector(newUp);
     }
     
+    void yaw(double angle) {
+        up = v3normalize(up);
+        
+        direction = rotatePointAboutLine(direction, angle, v3(0.0, 0.0, 0.0), up);
+        
+        updateForUpVector(up);
+    }
+    
+    void move(double distance) {
+        direction = v3normalize(direction);
+
+        v3 offset = distance * direction;
+        
+        position = position + offset;
+    }
+    
     void updateForUpVector(v3 referenceUp) {
         direction = v3normalize(direction);
         
@@ -386,6 +402,8 @@ struct InputState {
         backActive = false;
         leftActive = false;
         rightActive = false;
+        yawLeftActive = false;
+        yawRightActive = false;
         upActive = false;
         downActive = false;
         shouldQuit = false;
@@ -395,6 +413,8 @@ struct InputState {
     bool backActive;
     bool leftActive;
     bool rightActive;
+    bool yawLeftActive;
+    bool yawRightActive;
     bool upActive;
     bool downActive;
     bool shouldQuit;
@@ -414,10 +434,18 @@ void runMainLoop(SDL_Window *window) {
     double rollVelocity = 0.0;
     double rollMultiplier = 0.3;
     
-    double pitchAcceleration = 0.5;
+    double pitchAcceleration = 0.1;
     double pitchVelocity = 0.0;
-    double pitchMultiplier = 0.3;
+    double pitchMultiplier = 0.2;
+    
+    double yawAcceleration = 0.1;
+    double yawVelocity = 0.0;
+    double yawMultiplier = 0.2;
 
+    double acceleration = 0.1;
+    double velocity = 0.0;
+    double velocityMultiplier = 1000.0;
+    
     PointOfView view;
     
     v3 from(5.0, 0.0, 0.2);
@@ -445,6 +473,10 @@ void runMainLoop(SDL_Window *window) {
         
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
+                case SDL_QUIT:
+                    inputs.shouldQuit = true;
+                    break;
+                    
                 case SDL_KEYDOWN:
                     switch( event.key.keysym.sym ) {
                         case SDLK_ESCAPE:
@@ -467,6 +499,12 @@ void runMainLoop(SDL_Window *window) {
                             break;
                         case SDLK_DOWN:
                             inputs.backActive = true;
+                            break;
+                        case SDLK_LEFT:
+                            inputs.yawLeftActive = true;
+                            break;
+                        case SDLK_RIGHT:
+                            inputs.yawRightActive = true;
                             break;
                         default:
                             break;
@@ -493,6 +531,12 @@ void runMainLoop(SDL_Window *window) {
                             break;
                         case SDLK_DOWN:
                             inputs.backActive = false;
+                            break;
+                        case SDLK_LEFT:
+                            inputs.yawLeftActive = false;
+                            break;
+                        case SDLK_RIGHT:
+                            inputs.yawRightActive = false;
                             break;
                         default:
                             break;
@@ -546,7 +590,7 @@ void runMainLoop(SDL_Window *window) {
             }
             
             if (!inputs.upActive && !inputs.downActive) {
-                pitchVelocity *= 0.95;
+                pitchVelocity *= 0.9;
             }
             
             if (pitchVelocity < -1.0) {
@@ -555,8 +599,53 @@ void runMainLoop(SDL_Window *window) {
                 pitchVelocity = 1.0;
             }
             
+            if (inputs.yawLeftActive) {
+                yawVelocity += yawAcceleration * dt;
+            }
+            
+            if (inputs.yawRightActive) {
+                yawVelocity -= yawAcceleration * dt;
+            }
+            
+            if (!inputs.yawLeftActive && !inputs.yawRightActive) {
+                yawVelocity *= 0.9;
+            }
+            
+            if (yawVelocity < -1.0) {
+                yawVelocity = -1.0;
+            } else if (yawVelocity > 1.0) {
+                yawVelocity = 1.0;
+            }
+            
+            if (inputs.forwardActive) {
+                velocity += acceleration * dt;
+            }
+            
+            if (inputs.backActive) {
+                velocity -= acceleration * dt;
+            }
+            
+            if (!inputs.forwardActive && !inputs.backActive) {
+                velocity *= 0.95;
+            }
+            
+            if (velocity < -1.0) {
+                velocity = -1.0;
+            } else if (velocity > 1.0) {
+                velocity = 1.0;
+            }
+            
             view.roll(rollVelocity * rollMultiplier);
             view.pitch(pitchVelocity * pitchMultiplier);
+            view.yaw(yawVelocity * yawMultiplier);
+            
+            velocityMultiplier = v3length(view.position) - planetRadius;
+            
+            if (velocityMultiplier < 10.0) {
+                velocityMultiplier = 10.0;
+            }
+            
+            view.move(velocity * dt * velocityMultiplier);
             
             // GAME STATE UPDATE - END
             

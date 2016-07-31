@@ -1,10 +1,8 @@
 # Things To Do
 
 - Helper Odd/Even function
-- Rework vector to be a struct, and generally more concise
 - Likewise rework matrix?
 - Normal (and UV?) info
-- Simple interactive camera model to move around (FLYING)
 - Update to quad tree chunk rendering
 - Basic shader for lighting
 - Simple interactive camera model to move around (TO / FROM / ALTITUDE) plus switch between
@@ -15,6 +13,11 @@
 
 
 ## Done 31/7/2016
+
+- Rework vector to be a struct, and generally more concise
+- Simple interactive camera model to move around (FLYING)
+
+## Done 30/7/2016
 
 - Added noise function
 - Simple noise based terrain
